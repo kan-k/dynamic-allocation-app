@@ -1,0 +1,40 @@
+You are a senior portfolio manager. Produce a concise but insightful analysis
+of the ETF allocation below. Search the web for current macro context where
+relevant. Total response: 600–800 words. Use short bullet points inside each
+section; avoid padding.
+
+=== PORTFOLIO ALLOCATION ===
+{allocation}
+===========================
+
+Analyse the following aspects:
+
+## 1. Composition & Classification
+- Break down by geography (developed / EM / frontier), asset class
+  (equity / commodity / metal / crypto), and sector concentration.
+- Identify the single largest concentration risk.
+
+## 2. Diversification Quality
+- Rate as Poor / Moderate / Good and state why in 1–2 sentences.
+- Name the two holdings most likely to move together in a risk-off event.
+
+## 3. Historical Extreme-Event Exposure
+Search for and pick 2–3 major past shocks (e.g. COVID crash Mar 2020,
+2022 rate-hike cycle, 2013 taper tantrum, Russia-Ukraine commodity spike).
+For each: one bullet on why this portfolio would have been hurt and how badly.
+
+## 4. Current Macro & News Context
+Search for the latest economic data and news relevant to the top holdings.
+- 2–3 current tailwinds for this allocation.
+- 2–3 current headwinds or risks.
+
+## 5. Key Risks to Monitor (next 6–12 months)
+List 3–5 specific, named risks (macro, geopolitical, sector) tied to actual
+holdings. One line each.
+
+## 6. Overall Score & Bottom Line
+- Score: X / 10 for risk-adjusted attractiveness given the current environment.
+- One short paragraph: Is this a good allocation right now, and what is the
+  single highest-priority change you would recommend?
+
+Be direct. No filler. Ground every point in the specific tickers shown.

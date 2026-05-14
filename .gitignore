@@ -1,0 +1,7 @@
+# NOTE: data/trading.duckdb IS committed — it ships as the seed price database
+# so the app has data on first deploy. Refresh it in-app or via scripts/.
+.streamlit/secrets.toml
+__pycache__/
+*.pyc
+.env
+.DS_Store

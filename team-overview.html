@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent Team — Hedge Fund</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0a0e1a;color:#e5e7eb;font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+
+  header{background:linear-gradient(135deg,#0f172a,#1e1b4b);border-bottom:1px solid #1f2937;padding:28px 40px;display:flex;justify-content:space-between;align-items:center}
+  .firm-name{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#6366f1;font-weight:600}
+  .header-title{font-size:28px;font-weight:700;letter-spacing:-.02em;color:#f9fafb;margin-top:4px}
+  .header-sub{font-size:13px;color:#6b7280;margin-top:4px}
+  .timestamp{text-align:right;font-size:12px;color:#4b5563}
+  .ts-label{color:#6b7280;font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+
+  .org-section{padding:40px 40px 0;max-width:1400px;margin:0 auto}
+  .section-label{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#4b5563;margin-bottom:16px}
+  .org-svg-wrap{display:flex;justify-content:center;overflow-x:auto}
+  .org-node{cursor:pointer;transition:opacity .2s}
+  .org-node:hover{opacity:.7}
+
+  .cards-section{padding:40px;max-width:1400px;margin:0 auto}
+  .cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  @media(max-width:1100px){.cards-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:680px){.cards-grid{grid-template-columns:1fr}}
+
+  .card{background:#111827;border:1px solid #1f2937;border-radius:12px;overflow:hidden;transition:transform .2s,box-shadow .2s}
+  .card:hover{transform:translateY(-3px);box-shadow:0 10px 40px rgba(0,0,0,.5)}
+  .card-accent{height:4px}
+  .card-body{padding:24px}
+  .card-top{display:flex;align-items:flex-start;gap:20px;margin-bottom:16px}
+
+  /* ── Avatar ── */
+  .avatar-wrap{position:relative;flex-shrink:0;width:100px;height:100px}
+  .avatar-ring{
+    width:100px;height:100px;border-radius:50%;
+    border:3px solid var(--accent);
+    overflow:hidden;background:#1f2937;
+    position:relative;
+  }
+  .avatar-img{
+    width:100%;height:100%;object-fit:cover;object-position:center top;
+    border-radius:50%;display:none;
+    transition:opacity .4s;
+  }
+  .avatar-img.loaded{display:block}
+  .avatar-skeleton{
+    position:absolute;inset:0;border-radius:50%;
+    background:linear-gradient(90deg,#1f2937 25%,#2d3748 50%,#1f2937 75%);
+    background-size:200% 100%;
+    animation:shimmer 1.4s infinite;
+  }
+  .avatar-skeleton.hide{display:none}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  .role-icon-badge{
+    position:absolute;bottom:3px;right:3px;
+    width:28px;height:28px;border-radius:50%;
+    background:#0a0e1a;border:2px solid #1f2937;
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;line-height:1;
+    box-shadow:0 2px 6px rgba(0,0,0,.6);
+  }
+
+  /* inside-ring photo tint overlay matching accent */
+  .avatar-tint{
+    position:absolute;inset:0;border-radius:50%;
+    pointer-events:none;opacity:0;
+    transition:opacity .3s;
+  }
+  .avatar-ring:hover .avatar-tint{opacity:.18}
+
+  .agent-name{font-size:19px;font-weight:700;line-height:1.2}
+  .role-badge{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.1em;padding:3px 8px;border-radius:4px;margin-top:6px;font-weight:600}
+  .persona{font-size:13px;color:#9ca3af;font-style:italic;line-height:1.6;margin-bottom:14px}
+
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .tag{font-size:11px;background:#1f2937;color:#9ca3af;padding:3px 8px;border-radius:20px;border:1px solid #374151}
+
+  .triggers{list-style:none;margin-bottom:16px}
+  .trigger-item{font-size:12px;color:#6b7280;font-family:'Courier New',monospace;padding:4px 0;border-bottom:1px solid #1a2030;display:flex;gap:6px;align-items:flex-start}
+  .trigger-item::before{content:"›";color:#4b5563;flex-shrink:0}
+
+  .copy-btn{font-size:11px;background:transparent;border:1px solid #374151;color:#6b7280;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .15s;width:100%}
+  .copy-btn:hover{background:#1f2937;color:#e5e7eb;border-color:#4b5563}
+  .copy-btn.copied{border-color:#22c55e;color:#22c55e}
+
+  .table-section{padding:0 40px 60px;max-width:1400px;margin:0 auto}
+  .route-table{width:100%;border-collapse:collapse;font-size:13px}
+  .route-table th{background:#0f172a;padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#4b5563;border-bottom:1px solid #1f2937}
+  .route-table td{padding:10px 14px;border-bottom:1px solid #1f2937;color:#9ca3af;vertical-align:top}
+  .route-table tr:hover td{background:#111827}
+  .route-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+
+  footer{text-align:center;padding:24px;border-top:1px solid #1f2937;font-size:12px;color:#374151}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="firm-name">Quant Investment Firm</div>
+    <div class="header-title">AI Agent Team</div>
+    <div class="header-sub">9 specialist agents orchestrated by Claude Code</div>
+  </div>
+  <div class="timestamp">
+    <div class="ts-label">Generated</div>
+    <div id="ts"></div>
+  </div>
+</header>
+
+<div class="org-section">
+  <div class="section-label">Organisation Hierarchy</div>
+  <div class="org-svg-wrap"><svg id="orgSvg" style="overflow:visible"></svg></div>
+</div>
+
+<div class="cards-section">
+  <div class="section-label">Agent Roster</div>
+  <div class="cards-grid" id="cardsGrid"></div>
+</div>
+
+<div class="table-section">
+  <div class="section-label" style="margin-bottom:16px">Routing Reference</div>
+  <table class="route-table">
+    <thead><tr><th>Keywords / Topics</th><th>Agent</th><th>Example Trigger</th></tr></thead>
+    <tbody id="routeBody"></tbody>
+  </table>
+</div>
+
+<footer>Generated from live SKILL.md files &nbsp;·&nbsp; team-overview.html</footer>
+
+<script>
+document.getElementById('ts').textContent = new Date().toLocaleString('en-GB',{
+  day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'
+});
+
+// ── Agent definitions (from live SKILL.md files) ──────────────────────────────
+const AGENTS = [
+  {
+    id: 'orchestrator',
+    name: 'Orchestrator',
+    role: 'Command & Routing',
+    color: '#7c3aed',
+    icon: '🎼',
+    gender: 'male',
+    persona: 'Pure routing and coordination agent. Reads each query, identifies the best specialist, loads their SKILL.md, and fully adopts that persona. Never answers from general knowledge — always delegates.',
+    areas: ['Query routing','Agent selection','Multi-agent coordination','Session management'],
+    triggers: ['Any query — the Orchestrator routes all requests','Name an agent to direct a query to it','Multi-domain queries: invokes several agents in sequence'],
+    copy: 'Route to Quant Researcher',
+  },
+  {
+    id: 'data-scientist',
+    name: 'Data Scientist',
+    role: 'Statistics & Visualisation',
+    color: '#0891b2',
+    icon: '🔬',
+    gender: 'female',
+    persona: 'Senior data scientist specialising in financial data. Rigorous, precise, always shows working. Prefers clean reproducible pipelines. Communicates findings visually wherever possible.',
+    areas: ['Hypothesis testing & regression','Time-series: ARIMA, GARCH','PCA, clustering, Bayesian','pandas / NumPy / Plotly pipelines','OHLCV & risk metrics'],
+    triggers: ['Plot the rolling Sharpe ratio of my strategy','Run a correlation matrix on these returns','Is this return series stationary?','Build a visualisation of portfolio attribution'],
+    copy: 'Plot the rolling Sharpe ratio',
+  },
+  {
+    id: 'writer',
+    name: 'Writer',
+    role: 'Copy & Documentation',
+    color: '#059669',
+    icon: '✍️',
+    gender: 'female',
+    persona: 'Professional financial and technical writer. Clear, precise, never padded. Adapts tone perfectly — terse for developer docs, polished for investor copy, guiding for UI microcopy.',
+    areas: ['App UI copy & tooltips','Technical docs & README','LP updates & investor comms','Emails & outreach','Compliance copy (flagged for legal)'],
+    triggers: ['Write the empty state for the portfolio dashboard','Draft an LP update for Q1','Write a tooltip explaining the Sharpe ratio','Help me write an intro email to a prime broker'],
+    copy: 'Write the empty state message',
+  },
+  {
+    id: 'quant-researcher',
+    name: 'Quant Researcher',
+    role: 'Alpha & Risk Research',
+    color: '#2563eb',
+    icon: '📊',
+    gender: 'male',
+    persona: 'Senior quantitative researcher, 15+ years in systematic equity investing. Academically rigorous but practically focused — cares about out-of-sample performance, not just backtest numbers.',
+    areas: ['Factor models: FF, Carhart, q-factor','Covariance: shrinkage, factor-based','Mean-variance, Black-Litterman','Backtesting: walk-forward, purging','Kalman filter, HMM regime detection'],
+    triggers: ['Review my backtest — does the methodology look sound?','How do I estimate a covariance matrix for 500 stocks?','My Sharpe is 2.1 in-sample — is that believable?','Construct a momentum factor for UK equities'],
+    copy: 'Review my backtest methodology',
+  },
+  {
+    id: 'frontend-designer',
+    name: 'Frontend Designer',
+    role: 'UI / UX Engineering',
+    color: '#db2777',
+    icon: '🎨',
+    gender: 'female',
+    persona: 'Senior frontend designer and engineer. Strong opinions about UX — proactively flags cleaner and more intuitive options. In financial context, trust and clarity are the most important design values.',
+    areas: ['Streamlit + Plotly components','Dark-theme financial dashboards','Information hierarchy & density','Accessibility (WCAG 2.1 AA)','Loading, error & empty states'],
+    triggers: ['This chart feels cluttered — how would you improve it?','Build a portfolio dashboard page','Design a trade entry modal','Review my component for accessibility issues'],
+    copy: 'Review this chart for UX issues',
+  },
+  {
+    id: 'code-tidier',
+    name: 'Code Tidier',
+    role: 'Refactoring & Annotation',
+    color: '#d97706',
+    icon: '🧹',
+    gender: 'male',
+    persona: 'Meticulous senior software engineer whose specialty is readability. No ego about style — applies project conventions. Never changes logic: only structure, naming, annotation, and organisation.',
+    areas: ['File & function docstrings','Self-documenting naming','PEP 8 / Prettier formatting','Import ordering & dead-code removal','Magic-number extraction'],
+    triggers: ['tidy (after any code is produced)','Clean up this file and annotate it properly','Rename everything to be more readable','Add docstrings to all these functions'],
+    copy: 'tidy',
+  },
+  {
+    id: 'economist',
+    name: 'Economist',
+    role: 'Macro & Market Strategy',
+    color: '#0284c7',
+    icon: '📰',
+    gender: 'male',
+    persona: 'Senior economist and equity market strategist. Translates quant output into plain English for non-technical investors. All opinions grounded in named sources, distinguishing consensus from own interpretation.',
+    areas: ['Monetary policy & yield curves','Inflation, GDP, PMI indicators','Sector rotation & valuation','Historical precedents: GFC, COVID, 2022','Translating quant to plain English'],
+    triggers: ['What does the yield curve tell us about recession risk?','Translate this factor analysis for an LP presentation','How would a rate cut cycle affect our strategy?','What happened to momentum in 2022 and why?'],
+    copy: 'Translate this factor analysis for an LP',
+  },
+  {
+    id: 'entrepreneur',
+    name: 'Entrepreneur',
+    role: 'Business Strategy',
+    color: '#dc2626',
+    icon: '💡',
+    gender: 'male',
+    persona: 'Serial entrepreneur and startup strategist with deep fintech and asset management experience. Relentlessly forward-looking. Pushes back on timid thinking while staying grounded in solo-operator reality.',
+    areas: ['Competitive positioning & moat building','Fee structures & fund business models','Attracting first institutional capital','Productising data & research output','Operating leverage for solo operators'],
+    triggers: ['What should I be building next?','How do I attract my first LP?','Is there a way to monetise the data I generate?','How do I think about the long-term shape of this business?'],
+    copy: 'What should I build next?',
+  },
+  {
+    id: 'data-fetcher',
+    name: 'Market Data Engineer',
+    role: 'Data Fetching & Ingestion',
+    color: '#0d9488',
+    icon: '📡',
+    gender: 'female',
+    persona: 'Specialist in sourcing, fetching, validating, and storing financial time-series data. Knows every major free and paid data source, is acutely aware of data quality traps (splits, dividends, survivorship bias), and always outputs data in the project\'s canonical DuckDB schema.',
+    areas: ['yfinance / ccxt / FRED / Alpha Vantage','Incremental update pipelines','Corporate action & split adjustment','Bulk async download with rate limiting','DuckDB upsert & schema validation','Anomaly detection: decimal shift, zero-vol spikes'],
+    triggers: ['Fetch historical OHLCV for these tickers and store in DuckDB','Write an incremental update script that only downloads missing dates','How do I bulk-download 500 tickers without hitting rate limits?','Set up a FRED macro fetch for US10Y yield and CPI','Validate our price data for decimal-shift anomalies'],
+    copy: 'Fetch historical OHLCV for these tickers and store in DuckDB',
+  },
+  {
+    id: 'team-visualiser',
+    name: 'Team Visualiser',
+    role: 'Org Chart & Team Page',
+    color: '#6366f1',
+    icon: '📷',
+    gender: 'female',
+    persona: 'Visual systems agent. Generates the self-contained team HTML page from live SKILL.md files. Always reads the actual files — never writes from memory. Every trigger produces a fresh, up-to-date page.',
+    areas: ['Reading all agent SKILL.md files','Generating self-contained HTML','Org chart with clickable nodes','Routing reference table','Live timestamp on every render'],
+    triggers: ['Show me the org chart','Who are my agents?','Launch the team page','Refresh the team overview'],
+    copy: 'Show me the org chart',
+  },
+];
+
+// ── Photo fetching — one request per agent, seeded for consistency ─────────────
+// Seed = agentId + fixed suffix → same face every time page loads.
+// Gender-targeted so the photo matches the role stereotype chosen above.
+
+async function fetchPhoto(agent) {
+  const url = `https://randomuser.me/api/?seed=${agent.id}-qfteam24&gender=${agent.gender}&inc=picture&nat=us,gb,au,ca,nz`;
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+    return data.results[0].picture.large;   // 128×128 jpg
+  } catch {
+    return null;
+  }
+}
+
+// ── Render cards (skeleton first, photos injected async) ──────────────────────
+const grid = document.getElementById('cardsGrid');
+
+AGENTS.forEach(agent => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.id = 'card-' + agent.id;
+
+  // accent stripe
+  const bar = document.createElement('div');
+  bar.className = 'card-accent';
+  bar.style.background = agent.color;
+  card.appendChild(bar);
+
+  const body = document.createElement('div');
+  body.className = 'card-body';
+
+  // top row
+  const top = document.createElement('div');
+  top.className = 'card-top';
+
+  // avatar
+  const wrap = document.createElement('div');
+  wrap.className = 'avatar-wrap';
+
+  const ring = document.createElement('div');
+  ring.className = 'avatar-ring';
+  ring.style.setProperty('--accent', agent.color);
+  ring.style.borderColor = agent.color;
+
+  const skeleton = document.createElement('div');
+  skeleton.className = 'avatar-skeleton';
+
+  const img = document.createElement('img');
+  img.className = 'avatar-img';
+  img.alt = agent.name;
+
+  const tint = document.createElement('div');
+  tint.className = 'avatar-tint';
+  tint.style.background = agent.color;
+
+  ring.appendChild(skeleton);
+  ring.appendChild(img);
+  ring.appendChild(tint);
+
+  const badge = document.createElement('div');
+  badge.className = 'role-icon-badge';
+  badge.style.borderColor = agent.color + '60';
+  badge.textContent = agent.icon;
+
+  wrap.appendChild(ring);
+  wrap.appendChild(badge);
+  top.appendChild(wrap);
+
+  // name + role badge
+  const meta = document.createElement('div');
+  meta.innerHTML = `
+    <div class="agent-name" style="color:${agent.color}">${agent.name}</div>
+    <span class="role-badge" style="background:${agent.color}22;color:${agent.color}">${agent.role}</span>
+  `;
+  top.appendChild(meta);
+  body.appendChild(top);
+
+  // persona
+  const p = document.createElement('p');
+  p.className = 'persona';
+  p.textContent = agent.persona;
+  body.appendChild(p);
+
+  // knowledge tags
+  const tags = document.createElement('div');
+  tags.className = 'tags';
+  agent.areas.forEach(a => {
+    const t = document.createElement('span');
+    t.className = 'tag';
+    t.textContent = a;
+    tags.appendChild(t);
+  });
+  body.appendChild(tags);
+
+  // trigger list
+  const ul = document.createElement('ul');
+  ul.className = 'triggers';
+  agent.triggers.forEach(tr => {
+    const li = document.createElement('li');
+    li.className = 'trigger-item';
+    li.textContent = tr;
+    ul.appendChild(li);
+  });
+  body.appendChild(ul);
+
+  // copy button
+  const btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = `Copy trigger: "${agent.copy}"`;
+  btn.onclick = () => {
+    navigator.clipboard.writeText(agent.copy).then(() => {
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = `Copy trigger: "${agent.copy}"`;
+        btn.classList.remove('copied');
+      }, 1800);
+    });
+  };
+  body.appendChild(btn);
+
+  card.appendChild(body);
+  grid.appendChild(card);
+
+  // async: load real photo, swap out skeleton
+  fetchPhoto(agent).then(photoUrl => {
+    if (!photoUrl) return;
+    img.onload = () => {
+      img.classList.add('loaded');
+      skeleton.classList.add('hide');
+    };
+    img.src = photoUrl;
+  });
+});
+
+// ── Org chart ─────────────────────────────────────────────────────────────────
+(function() {
+  const svg = document.getElementById('orgSvg');
+  const W = 1060, H = 220;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+
+  // Define circular clipPath per node so org chart shows tiny round photos too
+  const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+  AGENTS.forEach((a, i) => {
+    const cp = document.createElementNS('http://www.w3.org/2000/svg','clipPath');
+    cp.setAttribute('id', `clip-${a.id}`);
+    const circ = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circ.setAttribute('r','14'); circ.setAttribute('cx','0'); circ.setAttribute('cy','0');
+    cp.appendChild(circ);
+    defs.appendChild(cp);
+  });
+  svg.appendChild(defs);
+
+  const root   = { x: W/2, y: 42, agent: AGENTS[0] };
+  const leaves = AGENTS.slice(1).map((a, i) => ({ x: 48 + i * 107, y: 170, agent: a }));
+
+  // connector lines
+  const ry = root.y + 16;
+  leaves.forEach(c => {
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    const my = (ry + c.y - 16) / 2;
+    path.setAttribute('d', `M${root.x},${ry} C${root.x},${my} ${c.x},${my} ${c.x},${c.y-16}`);
+    path.setAttribute('stroke','#1f2937'); path.setAttribute('stroke-width','1.5'); path.setAttribute('fill','none');
+    svg.appendChild(path);
+  });
+
+  function addOrgNode(n) {
+    const { x, y, agent } = n;
+    const isRoot = agent === AGENTS[0];
+    const R = isRoot ? 20 : 16;
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.classList.add('org-node');
+    g.setAttribute('transform',`translate(${x},${y})`);
+
+    // background circle
+    const bg = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    bg.setAttribute('r', R + 2);
+    bg.setAttribute('fill', agent.color + '22');
+    bg.setAttribute('stroke', agent.color);
+    bg.setAttribute('stroke-width','1.5');
+    g.appendChild(bg);
+
+    // photo placeholder
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('r', R); circle.setAttribute('fill','#1f2937');
+    circle.setAttribute('clip-path',`url(#clip-${agent.id})`);
+    g.appendChild(circle);
+
+    // photo image element (loaded async)
+    const imgEl = document.createElementNS('http://www.w3.org/2000/svg','image');
+    imgEl.setAttribute('x', -R); imgEl.setAttribute('y', -R);
+    imgEl.setAttribute('width', R*2); imgEl.setAttribute('height', R*2);
+    imgEl.setAttribute('clip-path', `url(#clip-${agent.id})`);
+    imgEl.setAttribute('preserveAspectRatio','xMidYMin slice');
+    imgEl.setAttribute('opacity','0');
+    g.appendChild(imgEl);
+
+    // async load photo into org node too
+    fetchPhoto(agent).then(url => {
+      if (!url) return;
+      imgEl.setAttribute('href', url);
+      imgEl.setAttribute('opacity','1');
+      circle.setAttribute('fill','transparent');
+    });
+
+    // label below
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('text-anchor','middle');
+    label.setAttribute('y', R + 14);
+    label.setAttribute('fill', agent.color);
+    label.setAttribute('font-size', isRoot ? '11' : '10');
+    label.setAttribute('font-family','system-ui,sans-serif');
+    label.setAttribute('font-weight','600');
+    label.textContent = agent.name.split(' ')[0];
+    g.appendChild(label);
+
+    g.addEventListener('click', () => {
+      const card = document.getElementById('card-' + agent.id);
+      if (!card) return;
+      card.scrollIntoView({ behavior:'smooth', block:'center' });
+      card.style.outline = `2px solid ${agent.color}`;
+      card.style.outlineOffset = '3px';
+      setTimeout(() => { card.style.outline=''; card.style.outlineOffset=''; }, 1400);
+    });
+    svg.appendChild(g);
+  }
+
+  addOrgNode(root);
+  leaves.forEach(addOrgNode);
+})();
+
+// ── Routing table ─────────────────────────────────────────────────────────────
+const routes = [
+  { kw:'Statistics, data pipelines, charts, EDA, modelling output',          agent:'Data Scientist',    color:'#0891b2', ex:'Plot the rolling Sharpe ratio of my strategy' },
+  { kw:'UI copy, documentation, summaries, emails, reports',                  agent:'Writer',            color:'#059669', ex:'Write the empty state for the portfolio dashboard' },
+  { kw:'Factor models, alpha research, risk models, backtesting',             agent:'Quant Researcher',  color:'#2563eb', ex:'Review my backtest — does the methodology look sound?' },
+  { kw:'App UI, Streamlit components, Plotly charts, UX feedback',            agent:'Frontend Designer', color:'#db2777', ex:'This chart feels cluttered — how would you improve it?' },
+  { kw:'Code review, refactoring, annotation, naming conventions',            agent:'Code Tidier',       color:'#d97706', ex:'tidy' },
+  { kw:'Equity markets, macro, news, central bank policy',                    agent:'Economist',         color:'#0284c7', ex:"What does the yield curve tell us about recession risk?" },
+  { kw:'Business strategy, firm growth, product ideas, investor relations',   agent:'Entrepreneur',      color:'#dc2626', ex:'What should I be building next?' },
+  { kw:'Data fetching, API integration, price history download, yfinance, ccxt, FRED, DuckDB ingestion, incremental updates, data quality', agent:'Market Data Engineer', color:'#0d9488', ex:'Fetch historical OHLCV for these tickers and store in DuckDB' },
+  { kw:'"Show org chart", "who are my agents?", "launch team page"',          agent:'Team Visualiser',   color:'#6366f1', ex:'Show me the org chart' },
+];
+
+const tbody = document.getElementById('routeBody');
+routes.forEach(r => {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${r.kw}</td>
+    <td style="white-space:nowrap;font-weight:600">
+      <span class="route-dot" style="background:${r.color}"></span>
+      <span style="color:${r.color}">${r.agent}</span>
+    </td>
+    <td style="font-family:'Courier New',monospace;font-size:12px">${r.ex}</td>
+  `;
+  tbody.appendChild(tr);
+});
+</script>
+</body>
+</html>

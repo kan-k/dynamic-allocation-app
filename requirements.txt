@@ -1,0 +1,15 @@
+streamlit>=1.36.0
+duckdb>=0.10.0
+plotly>=5.20.0
+yfinance>=0.2.40
+pandas>=2.0.0
+numpy>=1.26.0
+TA-Lib>=0.4.28
+scikit-learn>=1.4.0
+scipy>=1.12.0
+PyPortfolioOpt>=1.5.0
+beautifulsoup4>=4.12.0
+requests>=2.31.0
+pytz>=2024.1
+anthropic>=0.40.0
+groq>=0.9.0
