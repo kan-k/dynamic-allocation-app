@@ -687,6 +687,47 @@ if "da_w" in st.session_state:
             hide_index=True, use_container_width=True,
         )
 
+    # ---- Correlation heatmap of allocated assets (weight > 0.5%) ----
+    nz = [t for t in w.index if float(w[t]) > 0.005]
+    if len(nz) < 2:
+        st.info("Fewer than 2 assets with weight > 0.5% — no correlation to show.")
+    else:
+        corr = log_ret(px_[nz]).corr()
+        labels = [ALL_SHORT_NAMES.get(t, t) for t in corr.index]
+        corr.index = labels
+        corr.columns = labels
+        mask = np.triu(np.ones_like(corr.values, dtype=bool), k=1)
+        z = corr.values.copy()
+        z[mask] = np.nan
+        text = corr.round(2).astype(str).values
+        text[mask] = ""
+        st.markdown("**Asset Correlations (allocated only)**")
+        st.caption(
+            "Pearson correlation of daily log-returns over the training window; "
+            "only assets with weight > 0.5% shown."
+        )
+        fig_corr = go.Figure(go.Heatmap(
+            z=z,
+            x=labels, y=labels,
+            colorscale="RdYlGn",
+            zmin=-1, zmax=1,
+            text=text,
+            texttemplate="%{text}",
+            textfont=dict(size=10),
+            hoverongaps=False,
+            hovertemplate="<b>%{x}</b> vs <b>%{y}</b>: %{z:.2f}<extra></extra>",
+        ))
+        fig_corr.update_layout(
+            height=480,
+            margin=dict(l=0, r=0, t=10, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor=DARK_BG,
+            font=dict(color="#FAFAFA", size=11),
+            xaxis=dict(tickangle=-40, side="bottom"),
+            yaxis=dict(autorange="reversed"),
+        )
+        st.plotly_chart(fig_corr, use_container_width=True)
+
 st.divider()
 
 # ---------------------------------------------------------------------------
