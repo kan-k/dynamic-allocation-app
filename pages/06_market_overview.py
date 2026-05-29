@@ -12,6 +12,7 @@ import streamlit as st
 
 from core.data_store import get_prices, init_db
 from scripts.fetch_market_data import main as _fetch_market
+from scripts.fetch_global_etfs import main as _fetch_etfs
 
 # set_page_config is owned by app.py (the st.navigation entrypoint);
 # pages must not call it.
@@ -20,7 +21,7 @@ from scripts.fetch_market_data import main as _fetch_market
 # Constants
 # ---------------------------------------------------------------------------
 
-CATEGORIES: dict[str, list[str]] = {
+MKT_CATEGORIES: dict[str, list[str]] = {
     "Equity Indices": ["SPX", "HSI", "KOSPI", "NKY", "FTSE", "SX5E", "IBOV", "SET", "TWII"],
     "Energy":         ["WTI"],
     "Metals":         ["GOLD", "SILV", "COPPER", "PALL", "PLAT"],
@@ -28,7 +29,7 @@ CATEGORIES: dict[str, list[str]] = {
     "Crypto":         ["BTC"],
 }
 
-SHORT_NAMES: dict[str, str] = {
+MKT_SHORT_NAMES: dict[str, str] = {
     "SPX":    "S&P 500",
     "HSI":    "Hang Seng",
     "KOSPI":  "KOSPI",
@@ -47,6 +48,35 @@ SHORT_NAMES: dict[str, str] = {
     "SOYB":   "Soybean",
     "CORN":   "Corn",
     "BTC":    "Bitcoin",
+}
+
+ETF_CATEGORIES: dict[str, list[str]] = {
+    "Equities — Regional": [
+        "VUAG.L", "IKOR.L", "HTWN.L", "CNKY.L",
+        "HCHS.L", "IIND.L", "XFVT.L", "HIES.L",
+    ],
+    "Commodities":     ["WCOB.L", "COPB.L", "SOYO.L"],
+    "Metals & Mining": ["SPLT.L", "SPDM.L", "SILG.L", "SPGP.L"],
+    "Crypto":          ["IB1T.L"],
+}
+
+ETF_SHORT_NAMES: dict[str, str] = {
+    "VUAG.L": "S&P 500",
+    "IKOR.L": "Korea",
+    "HTWN.L": "Taiwan",
+    "CNKY.L": "Nikkei 225",
+    "HCHS.L": "China",
+    "IIND.L": "India",
+    "XFVT.L": "Vietnam",
+    "HIES.L": "EM Islamic",
+    "WCOB.L": "Commodity",
+    "COPB.L": "Copper",
+    "SOYO.L": "Soybean Oil",
+    "SPLT.L": "Platinum",
+    "SPDM.L": "Palladium",
+    "SILG.L": "Silver Miners",
+    "SPGP.L": "Gold Producers",
+    "IB1T.L": "Bitcoin",
 }
 
 WINDOW_DAYS: dict[str, int | None | str] = {
@@ -164,6 +194,7 @@ def make_category_chart(
     start_str: str | None,
     end_str: str | None,
     mode: str,
+    short_names: dict[str, str],
     benchmark_ticker: str | None = None,
     height: int = 360,
 ) -> go.Figure | None:
@@ -182,7 +213,7 @@ def make_category_chart(
             continue
         close = load_close(ticker, start_str, end_str)
         if close.empty or len(close) < 2:
-            warned.append(SHORT_NAMES.get(ticker, ticker))
+            warned.append(short_names.get(ticker, ticker))
             continue
         if use_bench:
             series = to_relative_cumret(close, bench_close)
@@ -201,7 +232,7 @@ def make_category_chart(
     trace_data.sort(key=lambda x: x[2], reverse=True)
 
     if use_bench:
-        y_title = f"Excess Return vs {SHORT_NAMES.get(benchmark_ticker, benchmark_ticker)} (%)"
+        y_title = f"Excess Return vs {short_names.get(benchmark_ticker, benchmark_ticker)} (%)"
     elif mode == MODE_CUMRET:
         y_title = MODE_CUMRET
     else:
@@ -210,7 +241,7 @@ def make_category_chart(
     fig = go.Figure()
 
     for ticker, series, _, orig_idx in trace_data:
-        short = SHORT_NAMES.get(ticker, ticker)
+        short = short_names.get(ticker, ticker)
         color = COLORS[orig_idx % len(COLORS)]
         fig.add_trace(go.Scatter(
             x=series.index,
@@ -228,7 +259,7 @@ def make_category_chart(
             return "No data"
         parts = []
         for ticker, v in valid.items():
-            name = SHORT_NAMES.get(ticker, ticker)
+            name = short_names.get(ticker, ticker)
             fmt = f"{v:+.2f}%" if (use_bench or mode == MODE_CUMRET) else f"{v:.2f}% ann."
             parts.append(f"<b>{name}</b>: {fmt}")
         return "<br>".join(parts)
@@ -279,17 +310,26 @@ st.caption(
 )
 
 # --- Refresh button ---
-# In-process call (subprocess fails on Streamlit Cloud — see deploy notes).
-if st.button("↺ Refresh Market Data", help="Re-download latest prices from Yahoo Finance"):
-    with st.spinner("Downloading 18 market benchmarks from Yahoo Finance…"):
+# In-process calls (subprocess fails on Streamlit Cloud — see deploy notes).
+if st.button("↺ Refresh All Data", help="Re-download global benchmarks + ETFs from Yahoo Finance"):
+    errors: list[str] = []
+    with st.spinner("Downloading 18 global benchmarks from Yahoo Finance…"):
         try:
             _fetch_market()
         except Exception as e:
-            st.error(f"Fetch failed: {e}")
-        else:
-            st.cache_data.clear()
-            st.success("Data refreshed successfully.")
-            st.rerun()
+            errors.append(f"Markets fetch failed: {e}")
+    with st.spinner("Downloading 16 LSE ETFs from Yahoo Finance…"):
+        try:
+            _fetch_etfs()
+        except Exception as e:
+            errors.append(f"ETF fetch failed: {e}")
+    st.cache_data.clear()
+    if errors:
+        for err in errors:
+            st.error(err)
+    else:
+        st.success("All data refreshed successfully.")
+        st.rerun()
 
 # --- Controls row ---
 col_win, col_mode, col_bench, col_info, col_src = st.columns([5, 4, 3, 1, 1])
@@ -308,7 +348,7 @@ with col_mode:
 
 with col_bench:
     bench_options: dict[str, str | None] = {"None": None}
-    bench_options.update({SHORT_NAMES[t]: t for t in SHORT_NAMES})
+    bench_options.update({MKT_SHORT_NAMES[t]: t for t in MKT_SHORT_NAMES})
     bench_label = st.selectbox(
         "vs Benchmark",
         list(bench_options.keys()),
@@ -403,15 +443,15 @@ st.caption(f"Displaying: **{mode}** · Window: **{window}** · {range_label}{ben
 st.divider()
 
 # --- Charts (tabbed) ---
-all_tickers_flat = [t for tks in CATEGORIES.values() for t in tks]
+all_tickers_flat = [t for tks in MKT_CATEGORIES.values() for t in tks]
 
 tab_cat, tab_all = st.tabs(["By Category", "All Markets"])
 
 with tab_cat:
-    for cat_name, tickers in CATEGORIES.items():
+    for cat_name, tickers in MKT_CATEGORIES.items():
         st.subheader(cat_name)
         fig = make_category_chart(
-            tickers, start_str, end_str, mode,
+            tickers, start_str, end_str, mode, MKT_SHORT_NAMES,
             benchmark_ticker=benchmark_ticker,
             height=chart_height(len(tickers)),
         )
@@ -424,7 +464,7 @@ with tab_cat:
 with tab_all:
     st.subheader("All 18 Markets")
     fig_all = make_category_chart(
-        all_tickers_flat, start_str, end_str, mode,
+        all_tickers_flat, start_str, end_str, mode, MKT_SHORT_NAMES,
         benchmark_ticker=benchmark_ticker,
         height=chart_height(len(all_tickers_flat)),
     )
@@ -442,12 +482,12 @@ st.caption(
 )
 
 rows = []
-for cat_name, tickers in CATEGORIES.items():
+for cat_name, tickers in MKT_CATEGORIES.items():
     for ticker in tickers:
         close = load_close(ticker, None, None)
         row: dict = {
             "Category": cat_name,
-            "Name": SHORT_NAMES.get(ticker, ticker),
+            "Name": MKT_SHORT_NAMES.get(ticker, ticker),
             "Ticker": ticker,
         }
         for period, days in RETURN_PERIODS.items():
@@ -493,7 +533,7 @@ corr_px = pd.DataFrame(corr_frames).dropna(how="all").ffill().dropna(how="any")
 if len(corr_px) > 5:
     corr_rets = np.log(corr_px / corr_px.shift(1)).dropna()
     corr_mat = corr_rets.corr()
-    labels = [SHORT_NAMES.get(t, t) for t in corr_mat.index]
+    labels = [MKT_SHORT_NAMES.get(t, t) for t in corr_mat.index]
     corr_mat.index = labels
     corr_mat.columns = labels
 
@@ -518,5 +558,179 @@ if len(corr_px) > 5:
         xaxis=dict(tickangle=-40, side="bottom"),
     )
     st.plotly_chart(fig_corr, use_container_width=True)
+else:
+    st.info("Select a longer window to compute correlations (need > 5 trading days).")
+
+# ===========================================================================
+# ETF PORTFOLIO section
+# ===========================================================================
+
+st.divider()
+st.header("ETF Portfolio")
+st.caption(
+    "16 LSE-listed ETFs spanning regional equities, commodities, metals miners, "
+    "and crypto — shares the time window and display mode above."
+)
+
+# --- ETF sub-controls (benchmark + data-source popover only) ---
+etf_col_bench, etf_col_src = st.columns([5, 1])
+
+with etf_col_bench:
+    etf_bench_options: dict[str, str | None] = {"None": None}
+    etf_bench_options.update({ETF_SHORT_NAMES[t]: t for t in ETF_SHORT_NAMES})
+    etf_bench_label = st.selectbox(
+        "vs ETF Benchmark",
+        list(etf_bench_options.keys()),
+        key="etf_benchmark",
+        help="Cumulative-return charts switch to excess return vs the chosen ETF benchmark.",
+    )
+    etf_benchmark_ticker: str | None = etf_bench_options[etf_bench_label]
+
+with etf_col_src:
+    st.write("")
+    with st.popover("📡"):
+        st.markdown("### Data Sources — LSE ETFs")
+        st.caption(
+            "All prices fetched via **Yahoo Finance** (`yfinance`). "
+            "Prices are **total-return adjusted** (splits + dividends, `auto_adjust=True`). "
+            "Exchange: London Stock Exchange."
+        )
+        etf_src_df = pd.DataFrame([
+            ("S&P 500",        "VUAG.L", "Equities — Regional"),
+            ("Korea",          "IKOR.L", "Equities — Regional"),
+            ("Taiwan",         "HTWN.L", "Equities — Regional"),
+            ("Nikkei 225",     "CNKY.L", "Equities — Regional"),
+            ("China",          "HCHS.L", "Equities — Regional"),
+            ("India",          "IIND.L", "Equities — Regional"),
+            ("Vietnam",        "XFVT.L", "Equities — Regional"),
+            ("EM Islamic",     "HIES.L", "Equities — Regional"),
+            ("Commodity",      "WCOB.L", "Commodities"),
+            ("Copper",         "COPB.L", "Commodities"),
+            ("Soybean Oil",    "SOYO.L", "Commodities"),
+            ("Platinum",       "SPLT.L", "Metals & Mining"),
+            ("Palladium",      "SPDM.L", "Metals & Mining"),
+            ("Silver Miners",  "SILG.L", "Metals & Mining"),
+            ("Gold Producers", "SPGP.L", "Metals & Mining"),
+            ("Bitcoin",        "IB1T.L", "Crypto"),
+        ], columns=["Name", "yfinance Symbol", "Category"])
+        st.dataframe(etf_src_df, hide_index=True, use_container_width=True)
+
+etf_bench_display = f" · ETF Benchmark: **{etf_bench_label}**" if etf_benchmark_ticker else ""
+st.caption(f"Displaying: **{mode}** · Window: **{window}** · {range_label}{etf_bench_display}")
+
+# --- ETF charts (tabbed) ---
+etf_all_tickers_flat = [t for tks in ETF_CATEGORIES.values() for t in tks]
+
+etf_tab_cat, etf_tab_all = st.tabs(["By Category", "All ETFs"])
+
+with etf_tab_cat:
+    for cat_name, tickers in ETF_CATEGORIES.items():
+        st.subheader(cat_name)
+        fig = make_category_chart(
+            tickers, start_str, end_str, mode, ETF_SHORT_NAMES,
+            benchmark_ticker=etf_benchmark_ticker,
+            height=chart_height(len(tickers)),
+        )
+        if fig:
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No data available for this category in the selected window.")
+        st.divider()
+
+with etf_tab_all:
+    st.subheader("All 16 ETFs")
+    fig_etf_all = make_category_chart(
+        etf_all_tickers_flat, start_str, end_str, mode, ETF_SHORT_NAMES,
+        benchmark_ticker=etf_benchmark_ticker,
+        height=chart_height(len(etf_all_tickers_flat)),
+    )
+    if fig_etf_all:
+        st.plotly_chart(fig_etf_all, use_container_width=True)
+    else:
+        st.info("No data available in the selected window.")
+
+# --- ETF returns summary table ---
+st.subheader("ETF Returns Summary — All Periods")
+st.caption(
+    "Cumulative % return per ETF across fixed time windows. "
+    "Rank by YTD (1 = best). "
+    "Bold = best/worst per column · Click a header to sort."
+)
+
+etf_rows = []
+for cat_name, tickers in ETF_CATEGORIES.items():
+    for ticker in tickers:
+        close = load_close(ticker, None, None)
+        row: dict = {
+            "Category": cat_name,
+            "Name": ETF_SHORT_NAMES.get(ticker, ticker),
+            "Ticker": ticker,
+        }
+        for period, days in RETURN_PERIODS.items():
+            if close.empty:
+                row[period] = float("nan")
+            elif days == "ytd":
+                v = ytd_return(close)
+                row[period] = v if v is not None else float("nan")
+            else:
+                v = period_return(close, days)
+                row[period] = v if v is not None else float("nan")
+        etf_rows.append(row)
+
+etf_table_df = pd.DataFrame(etf_rows)
+etf_table_df["Rank"] = (
+    etf_table_df["YTD"].rank(ascending=False, na_option="bottom").astype(int)
+)
+etf_table_df = etf_table_df[["Rank", "Category", "Name", "Ticker"] + list(RETURN_PERIODS.keys())]
+
+etf_styler = (
+    etf_table_df.style
+    .format({col: lambda v: f"{v:+.1f}%" if pd.notna(v) else "N/A" for col in RETURN_PERIODS.keys()})
+    .apply(highlight_col_extremes, subset=list(RETURN_PERIODS.keys()))
+    .set_properties(subset=list(RETURN_PERIODS.keys()),
+                    **{"text-align": "right", "font-family": "monospace"})
+)
+
+st.dataframe(etf_styler, use_container_width=True, hide_index=True)
+
+# --- ETF correlation heatmap ---
+st.divider()
+st.subheader("ETF Return Correlations")
+st.caption(
+    "Pearson correlation of daily log-returns in the selected window. "
+    "Green = move together · Red = move opposite · Diagonal always 1."
+)
+
+etf_corr_frames = {t: load_close(t, start_str, end_str) for t in etf_all_tickers_flat}
+etf_corr_px = pd.DataFrame(etf_corr_frames).dropna(how="all").ffill().dropna(how="any")
+
+if len(etf_corr_px) > 5:
+    etf_corr_rets = np.log(etf_corr_px / etf_corr_px.shift(1)).dropna()
+    etf_corr_mat = etf_corr_rets.corr()
+    etf_labels = [ETF_SHORT_NAMES.get(t, t) for t in etf_corr_mat.index]
+    etf_corr_mat.index = etf_labels
+    etf_corr_mat.columns = etf_labels
+
+    fig_etf_corr = go.Figure(go.Heatmap(
+        z=etf_corr_mat.values,
+        x=etf_corr_mat.columns.tolist(),
+        y=etf_corr_mat.index.tolist(),
+        colorscale="RdYlGn",
+        zmin=-1, zmax=1,
+        text=etf_corr_mat.round(2).astype(str).values,
+        texttemplate="%{text}",
+        textfont=dict(size=10),
+        hoverongaps=False,
+        hovertemplate="<b>%{x}</b> vs <b>%{y}</b>: %{z:.2f}<extra></extra>",
+    ))
+    fig_etf_corr.update_layout(
+        height=520,
+        margin=dict(l=0, r=0, t=10, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor=DARK_BG,
+        font=dict(color="#FAFAFA", size=11),
+        xaxis=dict(tickangle=-40, side="bottom"),
+    )
+    st.plotly_chart(fig_etf_corr, use_container_width=True)
 else:
     st.info("Select a longer window to compute correlations (need > 5 trading days).")
