@@ -267,6 +267,30 @@ def portfolio_metrics(weights: pd.Series, px: pd.DataFrame) -> dict[str, str]:
         "Max DD Duration":   f"{max(durs, default=0)} days",
     }
 
+
+def ewm_portfolio_metrics(
+    weights: pd.Series, mu: pd.Series, Sigma: pd.DataFrame, rf: float = 0.0
+) -> dict[str, str]:
+    """EWM-weighted 'optimiser view' metrics — same mu/Sigma the solver saw.
+
+    Lets the UI display what the solver actually optimised against, alongside
+    the equal-weighted realized stats from `portfolio_metrics`.
+    """
+    avail = [t for t in weights.index if t in mu.index]
+    if not avail:
+        return {}
+    wv = weights[avail].values
+    mv = mu[avail].values
+    Sv = Sigma.loc[avail, avail].values
+    r = float(wv @ mv)
+    v = float(np.sqrt(max(wv @ Sv @ wv, 0.0)))
+    s = (r - rf) / v if v > 1e-10 else float("nan")
+    return {
+        "EWM Ann. Return":     f"{r*100:+.2f}%",
+        "EWM Ann. Volatility": f"{v*100:.2f}%",
+        "EWM Sharpe Ratio":    f"{s:.3f}",
+    }
+
 # ---------------------------------------------------------------------------
 # Rolling allocation (weekly steps, cached)
 # ---------------------------------------------------------------------------
@@ -663,8 +687,12 @@ if run_btn:
         w, ok = run_solver(mu, Sigma, r, lb_s, ub_s, cat_bounds, solver_name, solver_params)
         if not ok:
             st.warning("Optimiser did not fully converge.", icon="⚠️")
-        st.session_state["da_w"]  = w
-        st.session_state["da_px"] = px
+        st.session_state["da_w"]      = w
+        st.session_state["da_px"]     = px
+        st.session_state["da_mu"]     = mu
+        st.session_state["da_Sigma"]  = Sigma
+        st.session_state["da_rf"]     = float(solver_params.get("rf", 0.0))
+        st.session_state["da_ewm_hl"] = ewm_hl
         for k in ("da_rolling","da_rolling_hash","da_bt","da_dyn_llm","da_bt_llm"):
             st.session_state.pop(k, None)
 
@@ -680,6 +708,21 @@ if "da_w" in st.session_state:
             st.markdown("**Statistics (training window)**")
             for k, v in m.items():
                 st.metric(k, v)
+            st.caption(
+                "Equal-weighted realized stats over the full training window. "
+                f"The solver optimised against EWM-weighted estimates (halflife = "
+                f"{st.session_state.get('da_ewm_hl', '?')} days) — see below."
+            )
+            em = ewm_portfolio_metrics(
+                w,
+                st.session_state.get("da_mu"),
+                st.session_state.get("da_Sigma"),
+                st.session_state.get("da_rf", 0.0),
+            ) if "da_mu" in st.session_state else {}
+            if em:
+                st.markdown("**Optimiser view (EWM-weighted)**")
+                for k, v in em.items():
+                    st.metric(k, v)
         st.dataframe(
             pd.DataFrame({"Asset":[ALL_SHORT_NAMES.get(t,t) for t in w.index],
                           "Ticker":w.index.tolist(),
