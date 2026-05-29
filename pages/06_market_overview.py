@@ -3,7 +3,6 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import subprocess
 from datetime import date, datetime, timedelta
 
 import numpy as np
@@ -12,8 +11,10 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from core.data_store import get_prices, init_db
+from scripts.fetch_market_data import main as _fetch_market
 
-st.set_page_config(page_title="Market Overview", layout="wide")
+# set_page_config is owned by app.py (the st.navigation entrypoint);
+# pages must not call it.
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -278,21 +279,17 @@ st.caption(
 )
 
 # --- Refresh button ---
-script_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "scripts", "fetch_market_data.py")
-)
+# In-process call (subprocess fails on Streamlit Cloud — see deploy notes).
 if st.button("↺ Refresh Market Data", help="Re-download latest prices from Yahoo Finance"):
     with st.spinner("Downloading 18 market benchmarks from Yahoo Finance…"):
-        result = subprocess.run(
-            [sys.executable, script_path],
-            capture_output=True, text=True,
-        )
-    if result.returncode == 0:
-        st.cache_data.clear()
-        st.success("Data refreshed successfully.")
-        st.rerun()
-    else:
-        st.error(f"Fetch failed:\n{result.stderr}")
+        try:
+            _fetch_market()
+        except Exception as e:
+            st.error(f"Fetch failed: {e}")
+        else:
+            st.cache_data.clear()
+            st.success("Data refreshed successfully.")
+            st.rerun()
 
 # --- Controls row ---
 col_win, col_mode, col_bench, col_info, col_src = st.columns([5, 4, 3, 1, 1])

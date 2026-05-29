@@ -9,14 +9,18 @@ st.set_page_config(
 
 init_db()
 
-# Single-page app: only the Dynamic Allocation tool is exposed.
-# Using st.navigation disables automatic pages/ discovery, so the other
-# page files remain in the repo but never appear in the sidebar.
+# Multi-page app: Market Overview (default) + Dynamic Allocation.
+# Using st.navigation disables automatic pages/ discovery, so any other
+# page files in the repo remain dormant.
 pg = st.navigation([
+    st.Page(
+        "pages/06_market_overview.py",
+        title="Market Overview",
+        default=True,
+    ),
     st.Page(
         "pages/07_dynamic_allocation.py",
         title="Dynamic Allocation",
-        default=True,
-    )
+    ),
 ])
 pg.run()
