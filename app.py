@@ -9,9 +9,8 @@ st.set_page_config(
 
 init_db()
 
-# Multi-page app: Market Overview (default) + Dynamic Allocation.
-# Using st.navigation disables automatic pages/ discovery, so any other
-# page files in the repo remain dormant.
+# Multi-page app. Using st.navigation disables automatic pages/ discovery,
+# so any other page files in the repo remain dormant.
 pg = st.navigation([
     st.Page(
         "pages/06_market_overview.py",
@@ -21,6 +20,10 @@ pg = st.navigation([
     st.Page(
         "pages/07_dynamic_allocation.py",
         title="Dynamic Allocation",
+    ),
+    st.Page(
+        "pages/08_dynamic_strategy_tester.py",
+        title="Dynamic Strategy Tester",
     ),
 ])
 pg.run()
