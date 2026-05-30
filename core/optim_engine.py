@@ -97,7 +97,19 @@ def _resolve(s: str) -> date | None:
 # ---------------------------------------------------------------------------
 
 @st.cache_data(ttl=3600)
-def load_prices(tickers: tuple[str,...], start: str | None, end: str | None = None) -> pd.DataFrame:
+def load_prices(
+    tickers: tuple[str, ...],
+    start: str | None,
+    end: str | None = None,
+    min_coverage: float = 0.5,
+) -> pd.DataFrame:
+    """Load an aligned close-price panel.
+
+    `min_coverage` drops tickers whose non-NaN row fraction is below the
+    threshold — useful for single-window optimisation. Set to 0.0 to keep
+    partial-history tickers (e.g. for backtesters that handle per-date
+    eligibility themselves).
+    """
     frames: dict[str, pd.Series] = {}
     for t in tickers:
         df = get_prices(t, start)
@@ -112,8 +124,10 @@ def load_prices(tickers: tuple[str,...], start: str | None, end: str | None = No
     if not frames:
         return pd.DataFrame()
     px = pd.DataFrame(frames).ffill(limit=5).dropna(how="all")
-    ok = px.count() / len(px) >= 0.5
-    return px.loc[:, ok]
+    if min_coverage > 0:
+        ok = px.count() / len(px) >= min_coverage
+        px = px.loc[:, ok]
+    return px
 
 
 def log_ret(px: pd.DataFrame) -> pd.DataFrame:

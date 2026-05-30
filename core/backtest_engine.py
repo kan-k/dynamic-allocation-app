@@ -107,19 +107,27 @@ def run_backtest(
 ) -> tuple[pd.Series, pd.DataFrame, dict[str, str]]:
     """Backtest a periodically-rebalanced strategy.
 
+    Handles partial-history assets: at each rebalance, an asset is included
+    only if it has at least `min_period` non-NaN observations in the
+    trailing lookback window. Ineligible assets carry weight 0.0 at that
+    rebalance (e.g. an ETF that hadn't been listed yet sits out until it
+    accumulates enough data).
+
     Returns
     -------
     port_rets : pd.Series
         Daily log-returns of the strategy over the realised holding period.
     weights_hist : pd.DataFrame
-        Weights at each successful rebalance date (index = date, columns = tickers).
+        Weights at each rebalance (index = date, columns = ALL selected
+        tickers; 0.0 for any asset ineligible at that date).
     metrics : dict[str, str]
         Formatted performance metrics.
     """
     rf = float(solver_params.get("rf", 0.0))
     min_period = max(2 * halflife, 5)
+    all_tickers = px.columns.tolist()
+    ticker_to_idx = {t: i for i, t in enumerate(all_tickers)}
 
-    # Restrict the trading index to dates within the eval window.
     full_index = px.index
     eval_mask = (full_index >= pd.Timestamp(eval_start)) & (full_index <= pd.Timestamp(eval_end))
     if not eval_mask.any():
@@ -129,7 +137,6 @@ def run_backtest(
     if not sched:
         return pd.Series(dtype=float), pd.DataFrame(), {}
 
-    # Add sentinel end so the last weights are held through eval_end.
     end_sentinel = full_index[eval_mask][-1] + pd.Timedelta(days=1)
 
     weights_hist: dict[pd.Timestamp, pd.Series] = {}
@@ -137,43 +144,60 @@ def run_backtest(
 
     for t_i in sched:
         win = px.loc[:t_i].tail(lookback)
-        r_win = log_ret(win)
+        # Per-asset availability inside the lookback window
+        eligible = [t for t in all_tickers if win[t].count() >= min_period]
+        if len(eligible) < 2:
+            if last_weights is not None:
+                weights_hist[t_i] = last_weights
+            continue
+        r_win = log_ret(win[eligible])
         if len(r_win) < min_period:
             if last_weights is not None:
                 weights_hist[t_i] = last_weights
             continue
+        # Subset bounds to eligible assets
+        lb_e = np.array([lb_arr[ticker_to_idx[t]] for t in eligible])
+        ub_e = np.array([ub_arr[ticker_to_idx[t]] for t in eligible])
+        if lb_e.sum() > 1.001 or ub_e.sum() < 0.999:
+            # Bounds infeasible with reduced universe — carry over or skip
+            if last_weights is not None:
+                weights_hist[t_i] = last_weights
+            continue
         mu, Sigma = ewm_stats(r_win, halflife)
-        w_i, _ = run_solver(mu, Sigma, r_win, lb_arr, ub_arr,
-                            cat_bounds, solver_name, solver_params)
-        weights_hist[t_i] = w_i
-        last_weights = w_i
+        w_eligible, _ = run_solver(mu, Sigma, r_win, lb_e, ub_e,
+                                   cat_bounds, solver_name, solver_params)
+        # Embed eligible weights back into full ticker vector (0 elsewhere)
+        full_w = pd.Series(0.0, index=all_tickers)
+        full_w.loc[eligible] = w_eligible.values
+        weights_hist[t_i] = full_w
+        last_weights = full_w
 
     if not weights_hist:
         return pd.Series(dtype=float), pd.DataFrame(), {}
 
-    # Compute daily portfolio log-returns. Within [t_i, t_{i+1}) hold w_i.
-    daily_logs = log_ret(px)
+    # Per-segment portfolio returns over the active (non-zero-weight) subset.
     boundaries = list(weights_hist.keys()) + [end_sentinel]
     port_segments: list[pd.Series] = []
     for i in range(len(boundaries) - 1):
         t_a, t_b = boundaries[i], boundaries[i + 1]
         w_i = weights_hist[t_a]
-        # Returns strictly AFTER the rebalance date, up to and including
-        # the next rebalance (so the next rebalance day's return is earned
-        # at the OLD weights, then the new weights apply going forward).
-        seg_mask = (daily_logs.index > t_a) & (daily_logs.index <= t_b)
-        seg = daily_logs.loc[seg_mask]
-        if seg.empty:
+        active = w_i[w_i > 1e-10].index.tolist()
+        if not active:
             continue
-        # Align weights to seg columns
-        common = [t for t in w_i.index if t in seg.columns]
-        if not common:
+        seg_mask = (px.index > t_a) & (px.index <= t_b)
+        seg_px = px.loc[seg_mask, active]
+        if seg_px.shape[0] < 2:
             continue
-        w_aligned = w_i[common] / w_i[common].sum() if w_i[common].sum() > 1e-10 else w_i[common]
-        port_segments.append(seg[common] @ w_aligned)
+        seg_rets = log_ret(seg_px)
+        if seg_rets.empty:
+            continue
+        w_active = w_i[seg_rets.columns]
+        if w_active.sum() > 1e-10:
+            w_active = w_active / w_active.sum()
+        port_segments.append(seg_rets @ w_active)
 
     if not port_segments:
-        return pd.Series(dtype=float), pd.DataFrame(weights_hist).T, {}
+        return pd.Series(dtype=float), pd.DataFrame(weights_hist).T.sort_index(), {}
 
     port_rets = pd.concat(port_segments).sort_index()
     weights_df = pd.DataFrame(weights_hist).T.sort_index()

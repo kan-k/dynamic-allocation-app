@@ -233,15 +233,33 @@ if run_btn:
     data_end = eval_end_dt.strftime("%Y-%m-%d")
 
     with st.spinner("Loading prices and running backtest…"):
-        px = load_prices(tuple(selected), data_start, data_end)
+        # min_coverage=0.0 keeps partial-history tickers (e.g. ETFs that
+        # started trading after eval_start). The backtest engine decides
+        # per-rebalance which assets have enough history to include.
+        px = load_prices(tuple(selected), data_start, data_end, min_coverage=0.0)
         avail = [t for t in selected if t in px.columns]
         if len(avail) < 2:
-            st.error("Not enough price data for the selected assets.")
+            st.error("No price data found for the selected assets.")
             st.stop()
         if len(avail) < len(selected):
             missing = [ALL_SHORT_NAMES.get(t, t) for t in selected if t not in avail]
-            st.warning(f"No data for: {missing}", icon="⚠️")
+            st.warning(f"No data at all for: {missing}", icon="⚠️")
         px = px[avail]
+
+        # Report partial-history tickers (real data shorter than eval window)
+        eval_start_ts = pd.Timestamp(eval_start_dt)
+        partial = []
+        for t in avail:
+            first_obs = px[t].first_valid_index()
+            if first_obs is not None and first_obs > eval_start_ts:
+                partial.append((ALL_SHORT_NAMES.get(t, t), first_obs.date()))
+        if partial:
+            details = ", ".join(f"{name} (from {d})" for name, d in partial)
+            st.info(
+                f"Partial history — these assets enter the portfolio when their "
+                f"data begins: {details}",
+                icon="ℹ️",
+            )
 
         # Subset lb/ub to available tickers
         lb_sub = np.array([lb_map.get(t, 0.0) / 100 for t in avail])
