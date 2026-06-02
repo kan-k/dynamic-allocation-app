@@ -323,7 +323,7 @@ with st.expander("Advanced settings"):
                              (today - timedelta(days=5*365)).strftime("%Y%m%d"), key="da_ts")
     te_raw = ac2.text_input("Train end (YYYYMMDD/'today')", "today", key="da_te")
     ewm_hl  = ac3.slider("EWM halflife (days)", 21, 252, 63, 7, key="da_ewm")
-    rf_pct  = ac4.number_input("Risk-free rate (%)", 0.0, 20.0, 0.0, 0.25, key="da_rf")
+    rf_pct  = ac4.number_input("Risk-free rate (%)", 0.0, 20.0, 0.0, 0.25, key="da_rf_pct")
     solver_params["rf"] = rf_pct / 100
 
 train_start_dt = _parse(ts_raw)
