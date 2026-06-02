@@ -99,7 +99,7 @@ COLORS = [
 MODE_CUMRET = "Cumulative Return (%)"
 MODE_VOL    = "Rolling Volatility (% ann.)"
 
-DARK_BG = "rgba(20,23,30,0.9)"
+DARK_BG = "rgba(26,29,38,1.0)"  # matches secondaryBackgroundColor #1A1D26
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -172,20 +172,20 @@ def ytd_return(close: pd.Series) -> float | None:
 def highlight_col_extremes(col: pd.Series) -> list[str]:
     valid = col.dropna()
     if valid.empty:
-        return ["color: #555"] * len(col)
+        return ["color: #5a5d6a"] * len(col)
     max_v, min_v = valid.max(), valid.min()
     styles = []
     for v in col:
         if pd.isna(v):
-            styles.append("color: #555")
+            styles.append("color: #5a5d6a")
         elif v == max_v:
-            styles.append("background-color: #14532d; color: #86efac; font-weight: bold")
+            styles.append("background-color: #0d4d40; color: #5eead4; font-weight: bold")
         elif v == min_v:
-            styles.append("background-color: #7f1d1d; color: #fca5a5; font-weight: bold")
+            styles.append("background-color: #5c1e26; color: #fca5a5; font-weight: bold")
         elif v > 0:
-            styles.append("background-color: #0d3320; color: #4ade80")
+            styles.append("background-color: #0a2e2a; color: #5eead4")
         else:
-            styles.append("background-color: #3d1515; color: #f87171")
+            styles.append("background-color: #3a1a1f; color: #f87171")
     return styles
 
 
@@ -286,13 +286,13 @@ def make_category_chart(
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         xaxis=dict(gridcolor="#2a2d3a", showgrid=True, zeroline=False),
         yaxis=dict(gridcolor="#2a2d3a", showgrid=True, zeroline=True,
-                   zerolinecolor="#555", title=y_title),
+                   zerolinecolor="#4a4d5a", title=y_title),
         hovermode="x unified",
     )
     if not use_bench and mode == MODE_CUMRET:
-        fig.add_hline(y=0, line_color="#666", line_dash="dot", line_width=1)
+        fig.add_hline(y=0, line_color="#4a4d5a", line_dash="dot", line_width=1)
     elif use_bench:
-        fig.add_hline(y=0, line_color="#555", line_dash="dot", line_width=1)
+        fig.add_hline(y=0, line_color="#4a4d5a", line_dash="dot", line_width=1)
 
     return fig
 
@@ -541,7 +541,7 @@ if len(corr_px) > 5:
         z=corr_mat.values,
         x=corr_mat.columns.tolist(),
         y=corr_mat.index.tolist(),
-        colorscale="RdYlGn",
+        colorscale="RdBu",
         zmin=-1, zmax=1,
         text=corr_mat.round(2).astype(str).values,
         texttemplate="%{text}",
@@ -715,7 +715,7 @@ if len(etf_corr_px) > 5:
         z=etf_corr_mat.values,
         x=etf_corr_mat.columns.tolist(),
         y=etf_corr_mat.index.tolist(),
-        colorscale="RdYlGn",
+        colorscale="RdBu",
         zmin=-1, zmax=1,
         text=etf_corr_mat.round(2).astype(str).values,
         texttemplate="%{text}",

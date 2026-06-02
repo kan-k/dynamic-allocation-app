@@ -74,7 +74,7 @@ COLORS = [
     "#B5EAD7","#FFDAC1","#9BF6FF","#BDB2FF",
 ]
 
-DARK_BG = "rgba(20,23,30,0.9)"
+DARK_BG = "rgba(26,29,38,1.0)"  # matches secondaryBackgroundColor #1A1D26
 SOLVER_NAMES = ["Max Sharpe Ratio","Min Volatility","Max Return","Min Drawdown"]
 
 # ---------------------------------------------------------------------------

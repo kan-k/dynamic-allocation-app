@@ -126,7 +126,7 @@ def backtest_chart(port_rets: pd.Series) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=cum.index, y=cum.values, name="Portfolio (cum. return)",
-        line=dict(color="#4ade80", width=2),
+        line=dict(color="#00C49F", width=2),
         hovertemplate="%{x|%Y-%m-%d}: %{y:+.3f}%<extra></extra>",
     ))
     fig.update_layout(
@@ -138,7 +138,7 @@ def backtest_chart(port_rets: pd.Series) -> go.Figure:
         yaxis=dict(title="Cumulative Return (%)", gridcolor="#2a2d3a", ticksuffix="%"),
         hovermode="x unified",
     )
-    fig.add_hline(y=0, line_color="#666", line_dash="dot", line_width=1)
+    fig.add_hline(y=0, line_color="#4a4d5a", line_dash="dot", line_width=1)
     return fig
 
 
@@ -147,7 +147,7 @@ def weights_bar(weights: pd.Series) -> go.Figure:
     labels = [ALL_SHORT_NAMES.get(t, t) for t in ws.index]
     fig = go.Figure(go.Bar(
         x=ws.values * 100, y=labels, orientation="h",
-        marker_color=["#4ade80" if v >= 0.001 else "#555" for v in ws],
+        marker_color=["#00C49F" if v >= 0.001 else "#4a4d5a" for v in ws],
         text=[f"{v*100:.1f}%" for v in ws], textposition="outside",
         hovertemplate="%{y}: %{x:.2f}%<extra></extra>",
     ))
@@ -494,7 +494,7 @@ if "da_w" in st.session_state:
         fig_corr = go.Figure(go.Heatmap(
             z=z,
             x=labels, y=labels,
-            colorscale="RdYlGn",
+            colorscale="RdBu",
             zmin=-1, zmax=1,
             text=text,
             texttemplate="%{text}",

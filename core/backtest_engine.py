@@ -214,7 +214,7 @@ def cumret_chart(port_rets: pd.Series) -> go.Figure:
     fig = go.Figure()
     fig.add_trace(go.Scatter(
         x=cum.index, y=cum.values, name="Strategy (cum. return)",
-        line=dict(color="#4ade80", width=2),
+        line=dict(color="#00C49F", width=2),
         hovertemplate="%{x|%Y-%m-%d}: %{y:+.3f}%<extra></extra>",
     ))
     fig.update_layout(
@@ -226,7 +226,7 @@ def cumret_chart(port_rets: pd.Series) -> go.Figure:
         yaxis=dict(title="Cumulative Return (%)", gridcolor="#2a2d3a", ticksuffix="%"),
         hovermode="x unified",
     )
-    fig.add_hline(y=0, line_color="#666", line_dash="dot", line_width=1)
+    fig.add_hline(y=0, line_color="#4a4d5a", line_dash="dot", line_width=1)
     return fig
 
 
