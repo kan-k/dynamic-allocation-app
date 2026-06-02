@@ -84,8 +84,31 @@ _CREAM_CSS = """
   hr { border-color: #D9D3C0 !important; }
   /* Expander headers */
   [data-testid="stExpander"] summary { color: #2C2A26 !important; }
-  /* Dataframe headers */
-  .stDataFrame thead { background-color: #EFE9D7 !important; }
+  /* Dataframe headers — dark cream so they stand out from the table body.
+     First block targets Streamlit's glide-data-grid widget (unstyled
+     DataFrames render via canvas; these CSS vars are honoured by the
+     wrapper). Second block targets HTML tables (pandas Styler output). */
+  [data-testid="stDataFrame"], [data-testid="stTable"] {
+    --gdg-bg-header: #C9C2A8 !important;
+    --gdg-bg-header-has-focus: #BFB89E !important;
+    --gdg-bg-header-hovered: #BFB89E !important;
+    --gdg-text-header: #2C2A26 !important;
+    --gdg-text-header-selected: #2C2A26 !important;
+    --gdg-bg-cell: #F5F1E8 !important;
+    --gdg-bg-cell-medium: #EFE9D7 !important;
+    --gdg-text-dark: #2C2A26 !important;
+    --gdg-text-medium: #4a4742 !important;
+    --gdg-horizontal-border-color: #D9D3C0 !important;
+  }
+  [data-testid="stDataFrame"] thead,
+  [data-testid="stDataFrame"] thead th,
+  [data-testid="stTable"] thead,
+  [data-testid="stTable"] thead th,
+  .stDataFrame thead, .stDataFrame thead th,
+  .stTable thead, .stTable thead th {
+    background-color: #C9C2A8 !important;
+    color: #2C2A26 !important;
+  }
 </style>
 """
 
