@@ -13,8 +13,8 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from core.optim_engine import (
-    ALL_SHORT_NAMES, COLORS, DARK_BG,
-    ewm_stats, log_ret, run_solver,
+    ALL_SHORT_NAMES, COLORS,
+    ewm_stats, log_ret, run_solver, theme,
 )
 
 FREQUENCIES = ["Weekly", "Biweekly", "Monthly", "Bimonthly"]
@@ -210,6 +210,7 @@ def run_backtest(
 # ---------------------------------------------------------------------------
 
 def cumret_chart(port_rets: pd.Series) -> go.Figure:
+    th = theme()
     cum = ((np.exp(port_rets.cumsum()) - 1) * 100).round(3)
     fig = go.Figure()
     fig.add_trace(go.Scatter(
@@ -220,13 +221,13 @@ def cumret_chart(port_rets: pd.Series) -> go.Figure:
     fig.update_layout(
         height=420,
         margin=dict(l=0, r=0, t=30, b=10),
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=DARK_BG,
-        font=dict(color="#FAFAFA", size=12),
-        xaxis=dict(gridcolor="#2a2d3a"),
-        yaxis=dict(title="Cumulative Return (%)", gridcolor="#2a2d3a", ticksuffix="%"),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=th["bg"],
+        font=dict(color=th["font"], size=12),
+        xaxis=dict(gridcolor=th["grid"]),
+        yaxis=dict(title="Cumulative Return (%)", gridcolor=th["grid"], ticksuffix="%"),
         hovermode="x unified",
     )
-    fig.add_hline(y=0, line_color="#4a4d5a", line_dash="dot", line_width=1)
+    fig.add_hline(y=0, line_color=th["zero"], line_dash="dot", line_width=1)
     return fig
 
 
@@ -234,6 +235,7 @@ def composition_chart(weights_hist: pd.DataFrame) -> go.Figure:
     """Stacked-area chart of portfolio composition over time."""
     if weights_hist.empty:
         return go.Figure()
+    th = theme()
     # Order traces by mean weight (largest at bottom of stack)
     ordered = weights_hist.mean().sort_values(ascending=False).index.tolist()
     fig = go.Figure()
@@ -265,11 +267,11 @@ def composition_chart(weights_hist: pd.DataFrame) -> go.Figure:
     fig.update_layout(
         height=500,
         margin=dict(l=0, r=0, t=30, b=10),
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=DARK_BG,
-        font=dict(color="#FAFAFA", size=12),
-        yaxis=dict(title="Allocation (%)", gridcolor="#2a2d3a", ticksuffix="%",
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=th["bg"],
+        font=dict(color=th["font"], size=12),
+        yaxis=dict(title="Allocation (%)", gridcolor=th["grid"], ticksuffix="%",
                    range=[0, 100]),
-        xaxis=dict(gridcolor="#2a2d3a"),
+        xaxis=dict(gridcolor=th["grid"]),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         hovermode="x unified",
     )

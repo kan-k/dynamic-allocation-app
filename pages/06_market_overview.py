@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from core.data_store import get_prices, init_db
+from core.optim_engine import theme
 from scripts.fetch_market_data import main as _fetch_market
 from scripts.fetch_global_etfs import main as _fetch_etfs
 
@@ -99,7 +100,9 @@ COLORS = [
 MODE_CUMRET = "Cumulative Return (%)"
 MODE_VOL    = "Rolling Volatility (% ann.)"
 
-DARK_BG = "rgba(26,29,38,1.0)"  # matches secondaryBackgroundColor #1A1D26
+# Plot background is now resolved at render time via theme() so light/dark
+# both work coherently. Keeping DARK_BG temporarily for any external imports.
+DARK_BG = "rgba(26,29,38,1.0)"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -170,22 +173,39 @@ def ytd_return(close: pd.Series) -> float | None:
 
 
 def highlight_col_extremes(col: pd.Series) -> list[str]:
+    is_cream = (
+        st.session_state.get("theme", "dark") == "cream"
+        if hasattr(st, "session_state") else False
+    )
+    if is_cream:
+        nan_c = "color: #A8A398"
+        max_s = "background-color: #BBE5C8; color: #1c5234; font-weight: bold"
+        min_s = "background-color: #F4CDCD; color: #722828; font-weight: bold"
+        pos_s = "background-color: #DCEEDF; color: #2d5e3a"
+        neg_s = "background-color: #F5DEDE; color: #7e3a3a"
+    else:
+        nan_c = "color: #5a5d6a"
+        max_s = "background-color: #0d4d40; color: #5eead4; font-weight: bold"
+        min_s = "background-color: #5c1e26; color: #fca5a5; font-weight: bold"
+        pos_s = "background-color: #0a2e2a; color: #5eead4"
+        neg_s = "background-color: #3a1a1f; color: #f87171"
+
     valid = col.dropna()
     if valid.empty:
-        return ["color: #5a5d6a"] * len(col)
+        return [nan_c] * len(col)
     max_v, min_v = valid.max(), valid.min()
     styles = []
     for v in col:
         if pd.isna(v):
-            styles.append("color: #5a5d6a")
+            styles.append(nan_c)
         elif v == max_v:
-            styles.append("background-color: #0d4d40; color: #5eead4; font-weight: bold")
+            styles.append(max_s)
         elif v == min_v:
-            styles.append("background-color: #5c1e26; color: #fca5a5; font-weight: bold")
+            styles.append(min_s)
         elif v > 0:
-            styles.append("background-color: #0a2e2a; color: #5eead4")
+            styles.append(pos_s)
         else:
-            styles.append("background-color: #3a1a1f; color: #f87171")
+            styles.append(neg_s)
     return styles
 
 
@@ -198,6 +218,7 @@ def make_category_chart(
     benchmark_ticker: str | None = None,
     height: int = 360,
 ) -> go.Figure | None:
+    th = theme()
     use_bench = benchmark_ticker is not None and mode == MODE_CUMRET
     bench_close: pd.Series = pd.Series(dtype=float)
     if use_bench:
@@ -281,18 +302,18 @@ def make_category_chart(
         height=height,
         margin=dict(l=0, r=0, t=30, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor=DARK_BG,
-        font=dict(color="#FAFAFA", size=12),
+        plot_bgcolor=th["bg"],
+        font=dict(color=th["font"], size=12),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
-        xaxis=dict(gridcolor="#2a2d3a", showgrid=True, zeroline=False),
-        yaxis=dict(gridcolor="#2a2d3a", showgrid=True, zeroline=True,
-                   zerolinecolor="#4a4d5a", title=y_title),
+        xaxis=dict(gridcolor=th["grid"], showgrid=True, zeroline=False),
+        yaxis=dict(gridcolor=th["grid"], showgrid=True, zeroline=True,
+                   zerolinecolor=th["zero"], title=y_title),
         hovermode="x unified",
     )
     if not use_bench and mode == MODE_CUMRET:
-        fig.add_hline(y=0, line_color="#4a4d5a", line_dash="dot", line_width=1)
+        fig.add_hline(y=0, line_color=th["zero"], line_dash="dot", line_width=1)
     elif use_bench:
-        fig.add_hline(y=0, line_color="#4a4d5a", line_dash="dot", line_width=1)
+        fig.add_hline(y=0, line_color=th["zero"], line_dash="dot", line_width=1)
 
     return fig
 
@@ -541,7 +562,7 @@ if len(corr_px) > 5:
         z=corr_mat.values,
         x=corr_mat.columns.tolist(),
         y=corr_mat.index.tolist(),
-        colorscale="RdBu",
+        colorscale="RdYlGn",
         zmin=-1, zmax=1,
         text=corr_mat.round(2).astype(str).values,
         texttemplate="%{text}",
@@ -549,12 +570,13 @@ if len(corr_px) > 5:
         hoverongaps=False,
         hovertemplate="<b>%{x}</b> vs <b>%{y}</b>: %{z:.2f}<extra></extra>",
     ))
+    th_mkt = theme()
     fig_corr.update_layout(
         height=560,
         margin=dict(l=0, r=0, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor=DARK_BG,
-        font=dict(color="#FAFAFA", size=11),
+        plot_bgcolor=th_mkt["bg"],
+        font=dict(color=th_mkt["font"], size=11),
         xaxis=dict(tickangle=-40, side="bottom"),
     )
     st.plotly_chart(fig_corr, use_container_width=True)
@@ -715,7 +737,7 @@ if len(etf_corr_px) > 5:
         z=etf_corr_mat.values,
         x=etf_corr_mat.columns.tolist(),
         y=etf_corr_mat.index.tolist(),
-        colorscale="RdBu",
+        colorscale="RdYlGn",
         zmin=-1, zmax=1,
         text=etf_corr_mat.round(2).astype(str).values,
         texttemplate="%{text}",
@@ -723,12 +745,13 @@ if len(etf_corr_px) > 5:
         hoverongaps=False,
         hovertemplate="<b>%{x}</b> vs <b>%{y}</b>: %{z:.2f}<extra></extra>",
     ))
+    th_etf = theme()
     fig_etf_corr.update_layout(
         height=520,
         margin=dict(l=0, r=0, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor=DARK_BG,
-        font=dict(color="#FAFAFA", size=11),
+        plot_bgcolor=th_etf["bg"],
+        font=dict(color=th_etf["font"], size=11),
         xaxis=dict(tickangle=-40, side="bottom"),
     )
     st.plotly_chart(fig_etf_corr, use_container_width=True)

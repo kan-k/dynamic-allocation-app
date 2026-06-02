@@ -77,6 +77,29 @@ COLORS = [
 DARK_BG = "rgba(26,29,38,1.0)"  # matches secondaryBackgroundColor #1A1D26
 SOLVER_NAMES = ["Max Sharpe Ratio","Min Volatility","Max Return","Min Drawdown"]
 
+
+def theme() -> dict[str, str]:
+    """Chart palette for the currently-selected app theme.
+
+    Reads st.session_state['theme'] (set by the toggle in app.py) and
+    returns plot background, font, grid, and zero-line colours. Default
+    is 'dark' if the key is unset.
+    """
+    mode = st.session_state.get("theme", "dark") if hasattr(st, "session_state") else "dark"
+    if mode == "cream":
+        return {
+            "bg":   "rgba(245,241,232,1.0)",   # warm off-white
+            "font": "#2C2A26",                  # near-black warm
+            "grid": "#D9D3C0",                  # subtle warm grid
+            "zero": "#A8A398",                  # muted neutral
+        }
+    return {
+        "bg":   "rgba(26,29,38,1.0)",
+        "font": "#FAFAFA",
+        "grid": "#2a2d3a",
+        "zero": "#4a4d5a",
+    }
+
 # ---------------------------------------------------------------------------
 # Date helpers
 # ---------------------------------------------------------------------------

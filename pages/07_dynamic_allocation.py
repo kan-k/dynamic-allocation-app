@@ -15,9 +15,9 @@ import streamlit as st
 from core.data_store import init_db
 from core.optim_engine import (
     UNIVERSE, ALL_SHORT_NAMES, TICKER_TO_CAT, ALL_TICKERS, DEFAULT_BOUNDS,
-    COLORS, DARK_BG, SOLVER_NAMES,
+    COLORS, SOLVER_NAMES,
     _parse, _resolve, load_prices, log_ret, ewm_stats,
-    run_solver, portfolio_metrics, ewm_portfolio_metrics,
+    run_solver, portfolio_metrics, ewm_portfolio_metrics, theme,
 )
 
 try:
@@ -81,6 +81,7 @@ def compute_rolling(
 # ---------------------------------------------------------------------------
 
 def alloc_lines(alloc_df: pd.DataFrame) -> go.Figure:
+    th = theme()
     ordered = alloc_df.mean().sort_values(ascending=False).index.tolist()
     fig = go.Figure()
     for i, t in enumerate(ordered):
@@ -111,10 +112,10 @@ def alloc_lines(alloc_df: pd.DataFrame) -> go.Figure:
     fig.update_layout(
         height=500,
         margin=dict(l=0, r=0, t=30, b=10),
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=DARK_BG,
-        font=dict(color="#FAFAFA", size=12),
-        yaxis=dict(title="Allocation (%)", gridcolor="#2a2d3a", ticksuffix="%"),
-        xaxis=dict(gridcolor="#2a2d3a"),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=th["bg"],
+        font=dict(color=th["font"], size=12),
+        yaxis=dict(title="Allocation (%)", gridcolor=th["grid"], ticksuffix="%"),
+        xaxis=dict(gridcolor=th["grid"]),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         hovermode="x unified",
     )
@@ -122,6 +123,7 @@ def alloc_lines(alloc_df: pd.DataFrame) -> go.Figure:
 
 
 def backtest_chart(port_rets: pd.Series) -> go.Figure:
+    th = theme()
     cum = ((np.exp(port_rets.cumsum()) - 1) * 100).round(3)
     fig = go.Figure()
     fig.add_trace(go.Scatter(
@@ -132,32 +134,33 @@ def backtest_chart(port_rets: pd.Series) -> go.Figure:
     fig.update_layout(
         height=420,
         margin=dict(l=0, r=0, t=30, b=10),
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=DARK_BG,
-        font=dict(color="#FAFAFA", size=12),
-        xaxis=dict(gridcolor="#2a2d3a"),
-        yaxis=dict(title="Cumulative Return (%)", gridcolor="#2a2d3a", ticksuffix="%"),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=th["bg"],
+        font=dict(color=th["font"], size=12),
+        xaxis=dict(gridcolor=th["grid"]),
+        yaxis=dict(title="Cumulative Return (%)", gridcolor=th["grid"], ticksuffix="%"),
         hovermode="x unified",
     )
-    fig.add_hline(y=0, line_color="#4a4d5a", line_dash="dot", line_width=1)
+    fig.add_hline(y=0, line_color=th["zero"], line_dash="dot", line_width=1)
     return fig
 
 
 def weights_bar(weights: pd.Series) -> go.Figure:
+    th = theme()
     ws = weights.sort_values(ascending=True)
     labels = [ALL_SHORT_NAMES.get(t, t) for t in ws.index]
     fig = go.Figure(go.Bar(
         x=ws.values * 100, y=labels, orientation="h",
-        marker_color=["#00C49F" if v >= 0.001 else "#4a4d5a" for v in ws],
+        marker_color=["#00C49F" if v >= 0.001 else th["zero"] for v in ws],
         text=[f"{v*100:.1f}%" for v in ws], textposition="outside",
         hovertemplate="%{y}: %{x:.2f}%<extra></extra>",
     ))
     fig.update_layout(
         height=max(250, 40 + len(ws) * 28),
         margin=dict(l=0, r=80, t=10, b=10),
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=DARK_BG,
-        font=dict(color="#FAFAFA", size=12),
-        xaxis=dict(title="Weight (%)", gridcolor="#2a2d3a", ticksuffix="%"),
-        yaxis=dict(gridcolor="#2a2d3a"),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=th["bg"],
+        font=dict(color=th["font"], size=12),
+        xaxis=dict(title="Weight (%)", gridcolor=th["grid"], ticksuffix="%"),
+        yaxis=dict(gridcolor=th["grid"]),
     )
     return fig
 
@@ -494,7 +497,7 @@ if "da_w" in st.session_state:
         fig_corr = go.Figure(go.Heatmap(
             z=z,
             x=labels, y=labels,
-            colorscale="RdBu",
+            colorscale="RdYlGn",
             zmin=-1, zmax=1,
             text=text,
             texttemplate="%{text}",
@@ -502,12 +505,13 @@ if "da_w" in st.session_state:
             hoverongaps=False,
             hovertemplate="<b>%{x}</b> vs <b>%{y}</b>: %{z:.2f}<extra></extra>",
         ))
+        th_c = theme()
         fig_corr.update_layout(
             height=480,
             margin=dict(l=0, r=0, t=10, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor=DARK_BG,
-            font=dict(color="#FAFAFA", size=11),
+            plot_bgcolor=th_c["bg"],
+            font=dict(color=th_c["font"], size=11),
             xaxis=dict(tickangle=-40, side="bottom"),
             yaxis=dict(autorange="reversed"),
         )
