@@ -69,16 +69,70 @@ _CREAM_CSS = """
     color: #2C2A26 !important;
     border: 1px solid #D9D3C0 !important;
   }
-  /* Inputs */
+  /* Text inputs / text areas / number inputs */
   input, textarea,
   [data-baseweb="input"] > div,
-  [data-baseweb="select"] > div,
   [data-baseweb="textarea"] {
     background-color: #FAF6E9 !important;
     color: #2C2A26 !important;
+    border-color: #D9D3C0 !important;
   }
-  /* Radios + sliders */
-  [data-baseweb="radio"] div { color: #2C2A26 !important; }
+  /* Selectbox (closed state) — the dropdown "header" you see when collapsed */
+  [data-baseweb="select"] > div,
+  div[data-baseweb="select"] [role="combobox"] {
+    background-color: #C9C2A8 !important;
+    color: #2C2A26 !important;
+    border-color: #BFB89E !important;
+  }
+  [data-baseweb="select"] svg { fill: #2C2A26 !important; }
+  /* Selectbox open popover menu */
+  [data-baseweb="popover"] [role="listbox"],
+  [data-baseweb="popover"] [role="option"],
+  [data-baseweb="menu"] li {
+    background-color: #FAF6E9 !important;
+    color: #2C2A26 !important;
+  }
+  [data-baseweb="popover"] [role="option"]:hover,
+  [data-baseweb="menu"] li:hover {
+    background-color: #EFE9D7 !important;
+  }
+  /* Checkbox — outer square */
+  [data-baseweb="checkbox"] > span:first-child,
+  [data-baseweb="checkbox"] > div:first-child > div {
+    background-color: #FAF6E9 !important;
+    border-color: #BFB89E !important;
+  }
+  /* Checkbox — checked state (teal fill) */
+  [data-baseweb="checkbox"][aria-checked="true"] > span:first-child,
+  [data-baseweb="checkbox"][aria-checked="true"] > div:first-child > div {
+    background-color: #00C49F !important;
+    border-color: #00C49F !important;
+  }
+  [data-baseweb="checkbox"] label, [data-baseweb="checkbox"] span {
+    color: #2C2A26 !important;
+  }
+  /* Radio buttons */
+  [data-baseweb="radio"] > div:first-child > div {
+    background-color: #FAF6E9 !important;
+    border-color: #BFB89E !important;
+  }
+  [data-baseweb="radio"][aria-checked="true"] > div:first-child > div {
+    background-color: #00C49F !important;
+    border-color: #00C49F !important;
+  }
+  [data-baseweb="radio"] label, [data-baseweb="radio"] span,
+  [data-baseweb="radio"] div {
+    color: #2C2A26 !important;
+  }
+  /* Slider */
+  [data-baseweb="slider"] [role="slider"] { background-color: #00C49F !important; }
+  /* Tabs (the in-page st.tabs widget) */
+  [data-baseweb="tab-list"] {
+    background-color: #EFE9D7 !important;
+  }
+  [data-baseweb="tab"] {
+    color: #2C2A26 !important;
+  }
   /* Code blocks + dividers */
   code, pre { background-color: #EFE9D7 !important; color: #2C2A26 !important; }
   hr { border-color: #D9D3C0 !important; }

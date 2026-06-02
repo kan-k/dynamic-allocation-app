@@ -17,7 +17,7 @@ from core.optim_engine import (
     UNIVERSE, ALL_SHORT_NAMES, TICKER_TO_CAT, ALL_TICKERS, DEFAULT_BOUNDS,
     COLORS, SOLVER_NAMES,
     _parse, _resolve, load_prices, log_ret, ewm_stats,
-    run_solver, portfolio_metrics, ewm_portfolio_metrics, theme,
+    run_solver, portfolio_metrics, ewm_portfolio_metrics, theme, render_table,
 )
 
 try:
@@ -468,12 +468,11 @@ if "da_w" in st.session_state:
                 st.markdown("**Optimiser view (EWM-weighted)**")
                 for k, v in em.items():
                     st.metric(k, v)
-        st.dataframe(
-            pd.DataFrame({"Asset":[ALL_SHORT_NAMES.get(t,t) for t in w.index],
-                          "Ticker":w.index.tolist(),
-                          "Weight":[f"{v*100:.2f}%" for v in w]}),
-            hide_index=True, use_container_width=True,
-        )
+        st.markdown(render_table(pd.DataFrame({
+            "Asset":  [ALL_SHORT_NAMES.get(t, t) for t in w.index],
+            "Ticker": w.index.tolist(),
+            "Weight": [f"{v*100:.2f}%" for v in w],
+        })), unsafe_allow_html=True)
 
     # ---- Correlation heatmap of allocated assets (weight > 0.5%) ----
     nz = [t for t in w.index if float(w[t]) > 0.005]
@@ -665,11 +664,10 @@ if "da_bt" in st.session_state:
                     f"**Period:** {bt['bt_start']} → {bt['bt_end']}")
         for k, v in bt["metrics"].items():
             st.metric(k, v)
-        st.dataframe(
-            pd.DataFrame({"Asset":[ALL_SHORT_NAMES.get(t,t) for t in bt["weights"].index],
-                          "Weight":[f"{v*100:.1f}%" for v in bt["weights"]]}),
-            hide_index=True, use_container_width=True,
-        )
+        st.markdown(render_table(pd.DataFrame({
+            "Asset":  [ALL_SHORT_NAMES.get(t, t) for t in bt["weights"].index],
+            "Weight": [f"{v*100:.1f}%" for v in bt["weights"]],
+        })), unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("**Economist Interpretation**")

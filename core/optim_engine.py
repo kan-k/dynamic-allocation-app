@@ -100,6 +100,66 @@ def theme() -> dict[str, str]:
         "zero": "#4a4d5a",
     }
 
+
+def themed_table_styles() -> list[dict]:
+    """Pandas Styler `set_table_styles` rules matching the current theme.
+
+    Used by pages that render tables via `st.markdown(styler.to_html(),
+    unsafe_allow_html=True)` to ensure header / body colours match the
+    active theme (glide-data-grid's canvas painting doesn't honour
+    external CSS overrides reliably).
+    """
+    mode = st.session_state.get("theme", "dark") if hasattr(st, "session_state") else "dark"
+    if mode == "cream":
+        return [
+            {"selector": "table",
+             "props": "border-collapse: collapse; width: 100%; "
+                      "font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; "
+                      "font-size: 0.92rem; margin: 0;"},
+            {"selector": "thead th",
+             "props": "background-color: #C9C2A8 !important; color: #2C2A26 !important; "
+                      "font-weight: 600; padding: 8px 10px; text-align: left; "
+                      "border-bottom: 1px solid #BFB89E;"},
+            {"selector": "tbody td",
+             "props": "background-color: #F5F1E8; color: #2C2A26; padding: 6px 10px; "
+                      "border-bottom: 1px solid #E5DFCB;"},
+            {"selector": "tbody tr:hover td",
+             "props": "background-color: #EFE9D7;"},
+        ]
+    return [
+        {"selector": "table",
+         "props": "border-collapse: collapse; width: 100%; "
+                  "font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; "
+                  "font-size: 0.92rem; margin: 0;"},
+        {"selector": "thead th",
+         "props": "background-color: #2a2d3a !important; color: #FAFAFA !important; "
+                  "font-weight: 600; padding: 8px 10px; text-align: left; "
+                  "border-bottom: 1px solid #3a3d4a;"},
+        {"selector": "tbody td",
+         "props": "background-color: rgba(26,29,38,1.0); color: #FAFAFA; padding: 6px 10px; "
+                  "border-bottom: 1px solid #25283a;"},
+        {"selector": "tbody tr:hover td",
+         "props": "background-color: #25283a;"},
+    ]
+
+
+def render_table(styler_or_df, hide_index: bool = True) -> str:
+    """Return HTML string for a DataFrame or Styler with themed styles applied.
+
+    Callers should render via `st.markdown(html, unsafe_allow_html=True)`.
+    """
+    if hasattr(styler_or_df, "set_table_styles"):
+        styler = styler_or_df
+    else:
+        styler = styler_or_df.style
+    if hide_index:
+        try:
+            styler = styler.hide(axis="index")
+        except (AttributeError, TypeError):
+            pass
+    styler = styler.set_table_styles(themed_table_styles(), overwrite=False)
+    return styler.to_html()
+
 # ---------------------------------------------------------------------------
 # Date helpers
 # ---------------------------------------------------------------------------

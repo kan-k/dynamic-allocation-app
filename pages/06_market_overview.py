@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from core.data_store import get_prices, init_db
-from core.optim_engine import theme
+from core.optim_engine import theme, render_table
 from scripts.fetch_market_data import main as _fetch_market
 from scripts.fetch_global_etfs import main as _fetch_etfs
 
@@ -422,7 +422,7 @@ with col_src:
             ("Corn",          "CORN",   "ZC=F",       "Agri Future",  "CBOT"),
             ("Bitcoin",       "BTC",    "BTC-USD",    "Crypto",       "24/7 (USD)"),
         ], columns=["Name", "DB Ticker", "yfinance Symbol", "Asset Class", "Exchange / Market"])
-        st.dataframe(src_df, hide_index=True, use_container_width=True)
+        st.markdown(render_table(src_df), unsafe_allow_html=True)
 
 # --- Custom date inputs ---
 start_str: str | None = None
@@ -538,7 +538,7 @@ styler = (
     .set_properties(subset=ret_cols, **{"text-align": "right", "font-family": "monospace"})
 )
 
-st.dataframe(styler, use_container_width=True, hide_index=True)
+st.markdown(render_table(styler), unsafe_allow_html=True)
 
 # --- Correlation heatmap ---
 st.divider()
@@ -635,7 +635,7 @@ with etf_col_src:
             ("Gold Producers", "SPGP.L", "Metals & Mining"),
             ("Bitcoin",        "IB1T.L", "Crypto"),
         ], columns=["Name", "yfinance Symbol", "Category"])
-        st.dataframe(etf_src_df, hide_index=True, use_container_width=True)
+        st.markdown(render_table(etf_src_df), unsafe_allow_html=True)
 
 etf_bench_display = f" · ETF Benchmark: **{etf_bench_label}**" if etf_benchmark_ticker else ""
 st.caption(f"Displaying: **{mode}** · Window: **{window}** · {range_label}{etf_bench_display}")
@@ -713,7 +713,7 @@ etf_styler = (
                     **{"text-align": "right", "font-family": "monospace"})
 )
 
-st.dataframe(etf_styler, use_container_width=True, hide_index=True)
+st.markdown(render_table(etf_styler), unsafe_allow_html=True)
 
 # --- ETF correlation heatmap ---
 st.divider()
