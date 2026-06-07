@@ -111,13 +111,16 @@ def themed_table_styles() -> list[dict]:
     """
     mode = st.session_state.get("theme", "dark") if hasattr(st, "session_state") else "dark"
     if mode == "cream":
+        # Header background is left to whatever Streamlit paints (often
+        # stays dark even in cream mode); we set the header TEXT to cream
+        # so the column names are readable regardless of which paint wins.
         return [
             {"selector": "table",
              "props": "border-collapse: collapse; width: 100%; "
                       "font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; "
                       "font-size: 0.92rem; margin: 0;"},
             {"selector": "thead th",
-             "props": "background-color: #C9C2A8 !important; color: #2C2A26 !important; "
+             "props": "color: #F5F1E8 !important; "
                       "font-weight: 600; padding: 8px 10px; text-align: left; "
                       "border-bottom: 1px solid #BFB89E;"},
             {"selector": "tbody td",

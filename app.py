@@ -138,30 +138,27 @@ _CREAM_CSS = """
   hr { border-color: #D9D3C0 !important; }
   /* Expander headers */
   [data-testid="stExpander"] summary { color: #2C2A26 !important; }
-  /* Dataframe headers — dark cream so they stand out from the table body.
-     First block targets Streamlit's glide-data-grid widget (unstyled
-     DataFrames render via canvas; these CSS vars are honoured by the
-     wrapper). Second block targets HTML tables (pandas Styler output). */
-  [data-testid="stDataFrame"], [data-testid="stTable"] {
-    --gdg-bg-header: #C9C2A8 !important;
-    --gdg-bg-header-has-focus: #BFB89E !important;
-    --gdg-bg-header-hovered: #BFB89E !important;
-    --gdg-text-header: #2C2A26 !important;
-    --gdg-text-header-selected: #2C2A26 !important;
-    --gdg-bg-cell: #F5F1E8 !important;
-    --gdg-bg-cell-medium: #EFE9D7 !important;
+  /* Table headers only — change just the header TEXT to a light cream
+     so it's readable regardless of which background paint Streamlit
+     gives the header (cream-bg override is unreliable on the canvas-
+     rendered glide-data-grid widget, so we don't fight it).
+     Body cells continue to take the page's cream background via the
+     other rules above. */
+  [data-testid="stDataFrame"],
+  [data-testid="stTable"],
+  [data-testid="stDataEditor"],
+  [data-testid="stDataFrameResizable"] {
+    --gdg-text-header: #F5F1E8 !important;
+    --gdg-text-header-selected: #F5F1E8 !important;
     --gdg-text-dark: #2C2A26 !important;
-    --gdg-text-medium: #4a4742 !important;
-    --gdg-horizontal-border-color: #D9D3C0 !important;
+    --gdg-bg-cell: #F5F1E8 !important;
   }
-  [data-testid="stDataFrame"] thead,
   [data-testid="stDataFrame"] thead th,
-  [data-testid="stTable"] thead,
   [data-testid="stTable"] thead th,
-  .stDataFrame thead, .stDataFrame thead th,
-  .stTable thead, .stTable thead th {
-    background-color: #C9C2A8 !important;
-    color: #2C2A26 !important;
+  [data-testid="stDataEditor"] thead th,
+  .stDataFrame thead th,
+  .stTable thead th {
+    color: #F5F1E8 !important;
   }
 </style>
 """
