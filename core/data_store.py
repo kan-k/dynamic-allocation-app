@@ -74,6 +74,13 @@ def get_latest_price_date(ticker: str) -> date | None:
     return row[0] if row else None
 
 
+def get_max_price_date() -> date | None:
+    """Most recent price date across ALL tickers — powers the freshness header."""
+    with _conn() as con:
+        row = con.execute("SELECT MAX(date) FROM prices").fetchone()
+    return row[0] if row and row[0] else None
+
+
 def upsert_prices(df: pd.DataFrame, ticker: str) -> None:
     """df must have columns: date, open, high, low, close, volume."""
     df = df.copy()

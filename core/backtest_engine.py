@@ -209,7 +209,16 @@ def run_backtest(
 # Charts
 # ---------------------------------------------------------------------------
 
-def cumret_chart(port_rets: pd.Series) -> go.Figure:
+def cumret_chart(
+    port_rets: pd.Series,
+    benchmark: pd.Series | None = None,
+    benchmark_name: str = "Benchmark",
+) -> go.Figure:
+    """Cumulative-return line for the strategy, with an optional benchmark overlay.
+
+    `benchmark` is a daily log-return series; it is cumulated and aligned to the
+    strategy's date range (so a like-for-like comparison from the same start).
+    """
     th = theme()
     cum = ((np.exp(port_rets.cumsum()) - 1) * 100).round(3)
     fig = go.Figure()
@@ -218,6 +227,15 @@ def cumret_chart(port_rets: pd.Series) -> go.Figure:
         line=dict(color="#00C49F", width=2),
         hovertemplate="%{x|%Y-%m-%d}: %{y:+.3f}%<extra></extra>",
     ))
+    if benchmark is not None and not benchmark.empty:
+        b = benchmark.reindex(port_rets.index).dropna()
+        if len(b) >= 2:
+            bcum = ((np.exp(b.cumsum()) - 1) * 100).round(3)
+            fig.add_trace(go.Scatter(
+                x=bcum.index, y=bcum.values, name=benchmark_name,
+                line=dict(color=th["zero"], width=1.6, dash="dash"),
+                hovertemplate="%{x|%Y-%m-%d}: %{y:+.3f}%<extra></extra>",
+            ))
     fig.update_layout(
         height=420,
         margin=dict(l=0, r=0, t=30, b=10),
@@ -225,9 +243,35 @@ def cumret_chart(port_rets: pd.Series) -> go.Figure:
         font=dict(color=th["font"], size=12),
         xaxis=dict(gridcolor=th["grid"]),
         yaxis=dict(title="Cumulative Return (%)", gridcolor=th["grid"], ticksuffix="%"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         hovermode="x unified",
     )
     fig.add_hline(y=0, line_color=th["zero"], line_dash="dot", line_width=1)
+    return fig
+
+
+def drawdown_chart(port_rets: pd.Series) -> go.Figure:
+    """Underwater (drawdown-from-peak) chart for a daily log-return series."""
+    th = theme()
+    fig = go.Figure()
+    if not port_rets.empty:
+        cum = np.exp(port_rets.cumsum())
+        dd = ((cum / cum.cummax()) - 1) * 100
+        fig.add_trace(go.Scatter(
+            x=dd.index, y=dd.values.round(3), name="Drawdown",
+            fill="tozeroy", line=dict(color="#EF476F", width=1.2),
+            hovertemplate="%{x|%Y-%m-%d}: %{y:.2f}%<extra></extra>",
+        ))
+    fig.update_layout(
+        height=240,
+        margin=dict(l=0, r=0, t=10, b=10),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=th["bg"],
+        font=dict(color=th["font"], size=12),
+        xaxis=dict(gridcolor=th["grid"]),
+        yaxis=dict(title="Drawdown (%)", gridcolor=th["grid"], ticksuffix="%",
+                   rangemode="tozero"),
+        hovermode="x unified",
+    )
     return fig
 
 

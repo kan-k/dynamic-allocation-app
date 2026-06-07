@@ -154,9 +154,13 @@ init_db()
 # so any other page files in the repo remain dormant.
 pg = st.navigation([
     st.Page(
+        "pages/10_today.py",
+        title="Today",
+        default=True,
+    ),
+    st.Page(
         "pages/06_market_overview.py",
         title="Market Overview",
-        default=True,
     ),
     st.Page(
         "pages/07_dynamic_allocation.py",
