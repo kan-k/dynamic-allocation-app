@@ -75,6 +75,38 @@ _CREAM_CSS = """
     color: white !important;
     border: 1px solid #00C49F !important;
   }
+  .stButton button[kind="primary"] p,
+  .stButton button[kind="primary"] [data-testid="stMarkdownContainer"] p {
+    color: white !important;
+  }
+
+  /* Secondary buttons (theme toggle, Select all, Clear, ↺ Refresh, etc.)
+     — Streamlit's native dark background fights our cream page; restyle
+     them to match. */
+  .stButton button[kind="secondary"],
+  .stButton button:not([kind]) {
+    background-color: #EFE9D7 !important;
+    color: #2C2A26 !important;
+    border: 1px solid #D9D3C0 !important;
+  }
+  .stButton button[kind="secondary"] p,
+  .stButton button:not([kind]) p,
+  .stButton button[kind="secondary"] [data-testid="stMarkdownContainer"] p,
+  .stButton button:not([kind]) [data-testid="stMarkdownContainer"] p {
+    color: #2C2A26 !important;
+  }
+
+  /* Sidebar navigation links (Market Overview, Dynamic Allocation, ...)
+     — without this rule they keep Streamlit's native off-white text and
+     disappear into the cream sidebar background. */
+  [data-testid="stSidebar"] a,
+  [data-testid="stSidebar"] a p,
+  [data-testid="stSidebar"] a span,
+  [data-testid="stSidebarNav"] a,
+  [data-testid="stSidebarNav"] li,
+  [data-testid="stSidebarNav"] span {
+    color: #2C2A26 !important;
+  }
 
   /* Code blocks + dividers */
   code, pre { background-color: #EFE9D7 !important; color: #2C2A26 !important; }
