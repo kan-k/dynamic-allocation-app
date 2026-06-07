@@ -34,162 +34,70 @@ st.markdown(
 )
 
 # Cream-theme overrides — only injected when active.
+# Deliberately MINIMAL: we only restyle the page chrome + a few specific
+# components (expander/popover triggers, primary buttons, table headers).
+# All BaseWeb widgets (checkboxes, radios, selectboxes, sliders, tabs,
+# text inputs) keep Streamlit's native dark styling — they appear as dark
+# islands on the cream page, but they FUNCTION CORRECTLY (the checked
+# state of checkboxes renders properly) and don't trigger the expensive
+# style recalculation that broad widget overrides caused.
 _CREAM_CSS = """
 <style>
+  /* Page chrome — light cream */
   [data-testid="stAppViewContainer"],
   [data-testid="stHeader"],
   [data-testid="stMain"],
   .main, .block-container {
     background-color: #F5F1E8 !important;
-    color: #2C2A26 !important;
   }
-  [data-testid="stSidebar"],
-  [data-testid="stSidebarContent"],
-  section[data-testid="stSidebar"] > div {
+  [data-testid="stSidebar"] > div {
     background-color: #EFE9D7 !important;
   }
-  h1, h2, h3, h4, h5, h6,
-  p, label, span:not([data-baseweb]), li, td, th,
-  [data-testid="stMarkdownContainer"],
+  /* Body text — narrowly targeted, no wildcards or :not() selectors */
+  [data-testid="stMain"] h1,
+  [data-testid="stMain"] h2,
+  [data-testid="stMain"] h3,
+  [data-testid="stMain"] h4,
+  [data-testid="stMain"] h5,
+  [data-testid="stMain"] h6,
+  [data-testid="stMarkdownContainer"] p,
+  [data-testid="stMarkdownContainer"] li,
+  [data-testid="stMarkdownContainer"] strong,
   [data-testid="stCaptionContainer"] {
     color: #2C2A26 !important;
   }
-  /* Metric labels and values */
   [data-testid="stMetricLabel"] { color: #6b6862 !important; }
   [data-testid="stMetricValue"] { color: #2C2A26 !important; }
-  /* Streamlit primary buttons keep teal accent */
+
+  /* Primary teal button (▶ Run …) */
   .stButton button[kind="primary"] {
     background-color: #00C49F !important;
     color: white !important;
     border: 1px solid #00C49F !important;
   }
-  /* Secondary buttons (incl. theme toggle) */
-  .stButton button[kind="secondary"] {
-    background-color: #EFE9D7 !important;
-    color: #2C2A26 !important;
-    border: 1px solid #D9D3C0 !important;
-  }
-  /* Text inputs / text areas / number inputs */
-  input, textarea,
-  [data-baseweb="input"] > div,
-  [data-baseweb="textarea"] {
-    background-color: #FAF6E9 !important;
-    color: #2C2A26 !important;
-    border-color: #D9D3C0 !important;
-  }
-  /* Selectbox (closed state) — the dropdown "header" you see when collapsed */
-  [data-baseweb="select"] > div,
-  div[data-baseweb="select"] [role="combobox"] {
-    background-color: #C9C2A8 !important;
-    color: #2C2A26 !important;
-    border-color: #BFB89E !important;
-  }
-  [data-baseweb="select"] svg { fill: #2C2A26 !important; }
-  /* Selectbox open popover menu */
-  [data-baseweb="popover"] [role="listbox"],
-  [data-baseweb="popover"] [role="option"],
-  [data-baseweb="menu"] li {
-    background-color: #FAF6E9 !important;
-    color: #2C2A26 !important;
-  }
-  [data-baseweb="popover"] [role="option"]:hover,
-  [data-baseweb="menu"] li:hover {
-    background-color: #EFE9D7 !important;
-  }
-  /* Checkbox — outer square */
-  [data-baseweb="checkbox"] > span:first-child,
-  [data-baseweb="checkbox"] > div:first-child > div {
-    background-color: #FAF6E9 !important;
-    border-color: #BFB89E !important;
-  }
-  /* Checkbox — checked state (teal fill) */
-  [data-baseweb="checkbox"][aria-checked="true"] > span:first-child,
-  [data-baseweb="checkbox"][aria-checked="true"] > div:first-child > div {
-    background-color: #00C49F !important;
-    border-color: #00C49F !important;
-  }
-  [data-baseweb="checkbox"] label, [data-baseweb="checkbox"] span {
-    color: #2C2A26 !important;
-  }
-  /* Radio buttons */
-  [data-baseweb="radio"] > div:first-child > div {
-    background-color: #FAF6E9 !important;
-    border-color: #BFB89E !important;
-  }
-  [data-baseweb="radio"][aria-checked="true"] > div:first-child > div {
-    background-color: #00C49F !important;
-    border-color: #00C49F !important;
-  }
-  [data-baseweb="radio"] label, [data-baseweb="radio"] span,
-  [data-baseweb="radio"] div {
-    color: #2C2A26 !important;
-  }
-  /* Slider */
-  [data-baseweb="slider"] [role="slider"] { background-color: #00C49F !important; }
-  /* Tabs (the in-page st.tabs widget) */
-  [data-baseweb="tab-list"] {
-    background-color: #EFE9D7 !important;
-  }
-  [data-baseweb="tab"] {
-    color: #2C2A26 !important;
-  }
+
   /* Code blocks + dividers */
   code, pre { background-color: #EFE9D7 !important; color: #2C2A26 !important; }
   hr { border-color: #D9D3C0 !important; }
-  /* Expander summary bar — force the same dark strip in BOTH collapsed
-     and expanded states (Streamlit only paints it dark when expanded,
-     so collapsed expanders blend into the cream page and become
-     illegible). Text + chevron stay light cream so they're readable on
-     the dark strip. Body content inside the expander still inherits the
-     page's cream/dark text rules above. */
+
+  /* Expander summary — force dark strip in BOTH collapsed and expanded
+     states (Streamlit only paints it dark when expanded). Light-cream
+     text + chevron stay on it for readability. */
   [data-testid="stExpander"] summary,
-  [data-testid="stExpander"] details > summary,
-  [data-testid="stExpander"] details:not([open]) > summary,
-  [data-testid="stExpander"] details[open] > summary {
+  [data-testid="stExpander"] details > summary {
     background-color: #1A1D26 !important;
     border-radius: 0.4rem !important;
   }
-  [data-testid="stExpander"] summary,
   [data-testid="stExpander"] summary p,
   [data-testid="stExpander"] summary span,
   [data-testid="stExpander"] summary strong,
-  [data-testid="stExpander"] summary [data-testid="stMarkdownContainer"],
-  [data-testid="stExpander"] summary [data-testid="stMarkdownContainer"] *,
-  [data-testid="stExpander"] details > summary,
-  [data-testid="stExpander"] details > summary * {
+  [data-testid="stExpander"] summary [data-testid="stMarkdownContainer"] p {
     color: #F5F1E8 !important;
   }
-  [data-testid="stExpander"] summary svg,
-  [data-testid="stExpander"] details > summary svg {
-    fill: #F5F1E8 !important;
-  }
-  /* Popover trigger buttons (ℹ, 📡) — same dark-trigger family */
-  [data-testid="stPopover"] button,
-  [data-testid="stPopover"] button *,
-  [data-testid="stPopoverButton"],
-  [data-testid="stPopoverButton"] * {
-    color: #F5F1E8 !important;
-  }
-  /* Table headers only — change just the header TEXT to a light cream
-     so it's readable regardless of which background paint Streamlit
-     gives the header (cream-bg override is unreliable on the canvas-
-     rendered glide-data-grid widget, so we don't fight it).
-     Body cells continue to take the page's cream background via the
-     other rules above. */
-  [data-testid="stDataFrame"],
-  [data-testid="stTable"],
-  [data-testid="stDataEditor"],
-  [data-testid="stDataFrameResizable"] {
-    --gdg-text-header: #F5F1E8 !important;
-    --gdg-text-header-selected: #F5F1E8 !important;
-    --gdg-text-dark: #2C2A26 !important;
-    --gdg-bg-cell: #F5F1E8 !important;
-  }
-  [data-testid="stDataFrame"] thead th,
-  [data-testid="stTable"] thead th,
-  [data-testid="stDataEditor"] thead th,
-  .stDataFrame thead th,
-  .stTable thead th {
+  [data-testid="stExpander"] summary svg { fill: #F5F1E8 !important; }
+
+  /* Popover trigger (ℹ, 📡) — same dark-trigger family as expanders */
+  [data-testid="stPopover"] button {
     color: #F5F1E8 !important;
   }
 </style>
