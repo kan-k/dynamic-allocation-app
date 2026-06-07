@@ -136,8 +136,31 @@ _CREAM_CSS = """
   /* Code blocks + dividers */
   code, pre { background-color: #EFE9D7 !important; color: #2C2A26 !important; }
   hr { border-color: #D9D3C0 !important; }
-  /* Expander headers */
-  [data-testid="stExpander"] summary { color: #2C2A26 !important; }
+  /* Expander summary bar — Streamlit paints this with a dark surface
+     even in cream mode, so make the summary text + chevron light cream
+     so they're readable on the dark strip. (Body content of the
+     expander still inherits the page's cream/dark text rules above.)  */
+  [data-testid="stExpander"] summary,
+  [data-testid="stExpander"] summary p,
+  [data-testid="stExpander"] summary span,
+  [data-testid="stExpander"] summary strong,
+  [data-testid="stExpander"] summary [data-testid="stMarkdownContainer"],
+  [data-testid="stExpander"] summary [data-testid="stMarkdownContainer"] *,
+  [data-testid="stExpander"] details > summary,
+  [data-testid="stExpander"] details > summary * {
+    color: #F5F1E8 !important;
+  }
+  [data-testid="stExpander"] summary svg,
+  [data-testid="stExpander"] details > summary svg {
+    fill: #F5F1E8 !important;
+  }
+  /* Popover trigger buttons (ℹ, 📡) — same dark-trigger family */
+  [data-testid="stPopover"] button,
+  [data-testid="stPopover"] button *,
+  [data-testid="stPopoverButton"],
+  [data-testid="stPopoverButton"] * {
+    color: #F5F1E8 !important;
+  }
   /* Table headers only — change just the header TEXT to a light cream
      so it's readable regardless of which background paint Streamlit
      gives the header (cream-bg override is unreliable on the canvas-
