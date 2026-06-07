@@ -136,10 +136,19 @@ _CREAM_CSS = """
   /* Code blocks + dividers */
   code, pre { background-color: #EFE9D7 !important; color: #2C2A26 !important; }
   hr { border-color: #D9D3C0 !important; }
-  /* Expander summary bar — Streamlit paints this with a dark surface
-     even in cream mode, so make the summary text + chevron light cream
-     so they're readable on the dark strip. (Body content of the
-     expander still inherits the page's cream/dark text rules above.)  */
+  /* Expander summary bar — force the same dark strip in BOTH collapsed
+     and expanded states (Streamlit only paints it dark when expanded,
+     so collapsed expanders blend into the cream page and become
+     illegible). Text + chevron stay light cream so they're readable on
+     the dark strip. Body content inside the expander still inherits the
+     page's cream/dark text rules above. */
+  [data-testid="stExpander"] summary,
+  [data-testid="stExpander"] details > summary,
+  [data-testid="stExpander"] details:not([open]) > summary,
+  [data-testid="stExpander"] details[open] > summary {
+    background-color: #1A1D26 !important;
+    border-radius: 0.4rem !important;
+  }
   [data-testid="stExpander"] summary,
   [data-testid="stExpander"] summary p,
   [data-testid="stExpander"] summary span,

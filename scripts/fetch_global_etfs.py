@@ -4,6 +4,7 @@ Fetch and store 10-year OHLCV history for all LSE ETFs defined in data/global_et
 Run from the with_claude/ directory:
     python scripts/fetch_global_etfs.py
 """
+from __future__ import annotations
 import sys
 import os
 
