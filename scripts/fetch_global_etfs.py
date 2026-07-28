@@ -74,6 +74,17 @@ def main() -> None:
         print(f"{r['symbol']:<12} {r['rows']:>6}  {r['start']:<12} {r['end']:<12} {r['status']}")
     print("=" * 70)
 
+    # Auto-correct known data anomalies so a refresh never leaves corrupt rows in
+    # the DB (e.g. the 2025-10-24 batch spike, which yfinance re-introduces on each
+    # fetch). See scripts/fix_price_anomalies.py for the registry of fixes.
+    print("\nApplying known-anomaly corrections…")
+    from scripts.fix_price_anomalies import (
+        pass1_interpolate_spikes, pass2_refetch_spdm, pass3_fix_hl_fields,
+    )
+    pass1_interpolate_spikes()
+    pass2_refetch_spdm()
+    pass3_fix_hl_fields()
+
     ok = sum(1 for r in summary if r["status"] == "ok")
     print(f"\nDone: {ok}/{len(etfs)} tickers stored successfully.")
     print(f"DB: {os.path.abspath(os.path.join(os.path.dirname(__file__), '../data/trading.duckdb'))}")
