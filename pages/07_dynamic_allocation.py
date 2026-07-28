@@ -189,8 +189,7 @@ solver_name, solver_params = solver_settings("da_")
 
 with st.expander("Advanced settings"):
     ac1, ac2, ac3, ac4 = st.columns(4)
-    ts_raw = ac1.text_input("Train start (YYYYMMDD)",
-                            (today - timedelta(days=5 * 365)).strftime("%Y%m%d"), key="da_ts")
+    ts_raw = ac1.text_input("Train start (YYYYMMDD)", "20251201", key="da_ts")
     te_raw = ac2.text_input("Train end (YYYYMMDD/'today')", "today", key="da_te")
     ewm_hl = ac3.slider("EWM halflife (days)", 21, 252, 63, 7, key="da_ewm")
     rf_pct = ac4.number_input("Risk-free rate (%)", 0.0, 20.0, 0.0, 0.25, key="da_rf_pct")
@@ -367,7 +366,7 @@ with tab_bt:
                "over any period (benchmarked vs an equal-weight basket).")
     bc1, bc2, bc3 = st.columns(3)
     ad_raw = bc1.text_input("Allocation date (YYYYMMDD/'today')", "today", key="da_ad")
-    bs_raw = bc2.text_input("Backtest start (YYYYMMDD)", ts_raw, key="da_bs")
+    bs_raw = bc2.text_input("Backtest start (YYYYMMDD)", "20220101", key="da_bs")
     be_raw = bc3.text_input("Backtest end (YYYYMMDD/'today')", "today", key="da_be")
 
     if st.button("▶ Run Backtest", key="da_runbt"):
