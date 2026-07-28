@@ -25,8 +25,8 @@ CATEGORIES: dict[str, list[str]] = {
         "VUAG.L", "IKOR.L", "HTWN.L", "CNKY.L",
         "HCHS.L", "IIND.L", "XFVT.L", "HIES.L",
     ],
-    "Commodities": ["WCOB.L", "COPB.L", "SOYO.L"],
-    "Metals & Mining": ["SPLT.L", "SPDM.L", "SILG.L", "SPGP.L"],
+    "Commodities": ["WCOB.L", "SOYO.L"],
+    "Metals & Mining": ["SPLT.L", "SPDM.L", "SILG.L", "SPGP.L", "COPB.L"],
     "Crypto": ["IB1T.L"],
 }
 

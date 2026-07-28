@@ -15,7 +15,7 @@ import streamlit as st
 
 from core.optim_engine import (
     UNIVERSE, ALL_SHORT_NAMES, ALL_TICKERS, TICKER_TO_CAT,
-    DEFAULT_BOUNDS, SOLVER_NAMES,
+    DEFAULT_BOUNDS, DEFAULT_CAT_BOUNDS, SOLVER_NAMES,
 )
 
 
@@ -108,8 +108,9 @@ def constraints_editor(
 
     rows: list[dict] = []
     for cat, tickers in sel_cats.items():
+        lo_c, hi_c = DEFAULT_CAT_BOUNDS.get(cat, (0.0, 100.0))
         rows.append({"Type": "category", "Name": f"▶ {cat}", "Ticker": "—",
-                     "Min %": 0.0, "Max %": 100.0})
+                     "Min %": float(lo_c), "Max %": float(hi_c)})
         for t in tickers:
             lo, hi = DEFAULT_BOUNDS.get(t, (0.0, 30.0))
             rows.append({"Type": "asset", "Name": f"  {ALL_SHORT_NAMES.get(t, t)}",

@@ -28,8 +28,8 @@ st.set_page_config(page_title="Algo Allocation", layout="wide")
 
 ALL_TICKERS = (
     "VUAG.L", "IKOR.L", "HTWN.L", "CNKY.L", "HCHS.L", "IIND.L", "XFVT.L", "HIES.L",
-    "WCOB.L", "COPB.L", "SOYO.L",
-    "SPLT.L", "SPDM.L", "SILG.L", "SPGP.L",
+    "WCOB.L", "SOYO.L",
+    "SPLT.L", "SPDM.L", "SILG.L", "SPGP.L", "COPB.L",
     "IB1T.L",
 )
 
@@ -44,12 +44,12 @@ SHORT_NAMES: dict[str, str] = {
 
 # Default per-asset bounds (min%, max%) adapted from notebook
 DEFAULT_BOUNDS: dict[str, tuple[float, float]] = {
-    "VUAG.L": (0.0, 30.0), "IKOR.L": (0.0, 30.0), "HTWN.L": (0.0, 30.0),
-    "CNKY.L": (0.0, 30.0), "HCHS.L": (0.0, 30.0), "IIND.L": (0.0, 30.0),
-    "XFVT.L": (0.0, 30.0), "HIES.L": (5.0, 20.0),
-    "WCOB.L": (0.0, 10.0), "COPB.L": (0.0, 10.0), "SOYO.L": (0.0, 10.0),
-    "SPLT.L": (0.0, 10.0), "SPDM.L": (0.0, 10.0), "SILG.L": (0.0, 10.0),
-    "SPGP.L": (5.0, 10.0), "IB1T.L": (1.5,  5.0),
+    "VUAG.L": (5.0, 25.0), "IKOR.L": (0.0, 17.0), "HTWN.L": (0.0, 17.0),
+    "CNKY.L": (5.0, 25.0), "HCHS.L": (0.0, 17.0), "IIND.L": (0.0, 17.0),
+    "XFVT.L": (0.0,  5.0), "HIES.L": (0.0, 17.0),
+    "WCOB.L": (7.5, 20.0), "COPB.L": (2.5,  5.0), "SOYO.L": (2.5, 10.0),
+    "SPLT.L": (0.0,  5.0), "SPDM.L": (0.0,  5.0), "SILG.L": (0.0,  5.0),
+    "SPGP.L": (2.5,  7.5), "IB1T.L": (1.5,  5.0),
 }
 
 DARK_BG   = "rgba(20,23,30,0.9)"

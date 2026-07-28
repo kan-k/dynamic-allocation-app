@@ -22,8 +22,8 @@ from core.data_store import get_prices
 UNIVERSE: dict[str, dict[str, list[str]]] = {
     "LSE ETFs": {
         "Equities — Regional": ["VUAG.L","IKOR.L","HTWN.L","CNKY.L","HCHS.L","IIND.L","XFVT.L","HIES.L"],
-        "Commodities":         ["WCOB.L","COPB.L","SOYO.L"],
-        "Metals & Mining":     ["SPLT.L","SPDM.L","SILG.L","SPGP.L"],
+        "Commodities":         ["WCOB.L","SOYO.L"],
+        "Metals & Mining":     ["SPLT.L","SPDM.L","SILG.L","SPGP.L","COPB.L"],
         "Crypto (ETF)":        ["IB1T.L"],
     },
     "Global Markets": {
@@ -61,11 +61,24 @@ ALL_TICKERS: list[str] = [
 ]
 
 DEFAULT_BOUNDS: dict[str, tuple[float, float]] = {
-    "VUAG.L":(0,30),"IKOR.L":(0,30),"HTWN.L":(0,30),"CNKY.L":(0,30),
-    "HCHS.L":(0,30),"IIND.L":(0,30),"XFVT.L":(0,30),"HIES.L":(5,20),
-    "WCOB.L":(0,10),"COPB.L":(0,10),"SOYO.L":(0,10),
-    "SPLT.L":(0,10),"SPDM.L":(0,10),"SILG.L":(0,10),
-    "SPGP.L":(5,10),"IB1T.L":(1.5,5),
+    # Equities — Regional (per-ETF tiers)
+    "VUAG.L":(5,25),"CNKY.L":(5,25),                                            # core index
+    "IKOR.L":(0,17),"IIND.L":(0,17),"HCHS.L":(0,17),"HTWN.L":(0,17),"HIES.L":(0,17),  # regional & EM
+    "XFVT.L":(0,5),                                                             # frontier
+    # Commodities (category 10–20%)
+    "WCOB.L":(7.5,20),"SOYO.L":(2.5,10),
+    # Metals & Mining (category 7.5–20%)
+    "SPGP.L":(2.5,7.5),"COPB.L":(2.5,5),
+    "SPLT.L":(0,5),"SPDM.L":(0,5),"SILG.L":(0,5),
+    # Crypto
+    "IB1T.L":(1.5,5),
+}
+
+# Default per-CATEGORY combined bounds (min%, max%). Categories not listed here
+# default to (0, 100) = uncapped. Enforced by run_solver -> build_cat_cons.
+DEFAULT_CAT_BOUNDS: dict[str, tuple[float, float]] = {
+    "Commodities":     (10, 20),
+    "Metals & Mining": (7.5, 20),
 }
 
 COLORS = [
